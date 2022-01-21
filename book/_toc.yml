@@ -1,0 +1,17 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro
+parts:
+  - caption: Introduction
+    chapters:
+    - file: 10_introduction
+  - caption: Methods
+    chapters:
+      - file: 20_methods_data_intro
+      - file: 22_methods_data_discovery
+      - file: 23_methods_data_clean
+      - file: 24_methods_data_explore
+      - file: 25_methods_data_enrich
+      - file: 26_methods_data_model

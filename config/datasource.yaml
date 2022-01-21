@@ -1,0 +1,8 @@
+---
+criteo:
+  name : Criteo Sponsored Search Conversion Log Dataset
+  url : http://go.criteo.net/criteo-research-search-conversion.tar.gz
+  filename : criteo.tar.gz
+  expanded : Criteo_Conversion_Search/CriteoSearchData
+  sep : \t
+  missing: -1

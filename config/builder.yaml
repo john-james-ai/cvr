@@ -1,0 +1,12 @@
+---
+# InterBuildOrder
+criteo:
+  source:
+    name : criteo
+    description : Criteo Sponsored Search Conversion Log Dataset
+    url : http://go.criteo.net/criteo-research-search-conversion.tar.gz
+    compressed : criteo.tar.gz
+    decompressed : Criteo_Conversion_Search/CriteoSearchData
+    filename : criteo.csv
+    sep : \t
+    missing: -1
