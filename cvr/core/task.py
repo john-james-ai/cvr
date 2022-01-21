@@ -11,7 +11,26 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Friday, January 21st 2022, 12:52:32 am                                                                        #
+# Modified : Friday, January 21st 2022, 5:26:35 am                                                                         #
+# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
+# ------------------------------------------------------------------------------------------------------------------------ #
+# License  : BSD 3-clause "New" or "Revised" License                                                                       #
+# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
+# ======================================================================================================================== #
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ======================================================================================================================== #
+# Project  : Conversion Rate Prediction (CVR)                                                                              #
+# Version  : 0.1.0                                                                                                         #
+# File     : \task.py                                                                                                      #
+# Language : Python 3.10.1                                                                                                 #
+# ------------------------------------------------------------------------------------------------------------------------ #
+# Author   : John James                                                                                                    #
+# Email    : john.james.ai.studio@gmail.com                                                                                #
+# URL      : https://github.com/john-james-ai/cvr                                                                          #
+# ------------------------------------------------------------------------------------------------------------------------ #
+# Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
+# Modified : Friday, January 21st 2022, 3:59:15 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -32,6 +51,8 @@ import shutil
 import warnings
 
 warnings.filterwarnings("ignore")
+
+from cvr.data import criteo_columns, criteo_dtypes
 
 STATUS_CODES = {
     "102": "Processing",
@@ -443,7 +464,7 @@ class Copy(Task):
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
-class LoadTSV(Task):
+class ConvertDtypes(Task):
     """Loads a tab-delimited file into a DataFrame.
 
     Args:
@@ -456,8 +477,8 @@ class LoadTSV(Task):
 
     """
 
-    def __init__(self, source: str, columns: list = None, dtypes: dict = None) -> None:
-        super(LoadTSV, self).__init__()
+    def __init__(self, source: str, columns: list = criteo_columns, dtypes: dict = criteo_dtypes) -> None:
+        super(ConvertDtypes, self).__init__()
         self._source = source
         self._columns = columns
         self._dtypes = dtypes
@@ -632,3 +653,27 @@ class SavePKLDataFrame(Task):
     @property
     def summary(self) -> dict:
         return self._summary
+
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+class BuildDataset(Task):
+    """Constructs a Dataset object.
+
+    Args:
+        name (str): The name of the dataset
+        sample_size (float): Optional fraction of data to be sampled. If 1, the full dataset will be used. Default = 1
+        stratify (str): The column upon which the data should be stratified if sampling. Default is 'sale'.
+        random_stage (int): Pseudo random generator seed.
+    """
+
+    def __init__(self, name: str, sample_size: float = 1.0, stratify: str = "sale", random_state: int = None) -> None:
+        super(BuildDataset, self).__init__()
+        self._name = name
+        self._sample_size = sample_size
+        self._stratify = stratify
+        self._random_state = random_state
+
+    def _run(
+        self, logger: logging, data: Union[str, pd.DataFrame, dict] = None, force=False
+    ) -> Union[str, pd.DataFrame, dict]:
+        pass

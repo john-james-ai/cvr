@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Thursday, January 20th 2022, 2:21:56 pm                                                                       #
+# Modified : Friday, January 21st 2022, 4:44:02 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -46,7 +46,7 @@ class Config(ABC):
         pass
 
     @abstractmethod
-    def print_config(self) -> None:
+    def print(self) -> None:
         pass
 
 
@@ -65,7 +65,7 @@ class ProjectConfig(Config):
         with open(self._config_filepath, "w") as f:
             self._config = yaml.dump(config, f)
 
-    def print_config(self) -> None:
+    def print(self) -> None:
         self.load_config()
         self._printer.print_title("Project Configuration")
         for k, v in self._config.items():
@@ -119,66 +119,76 @@ class WorkspaceConfig(Config):
         with open(self._config_filepath, "w") as f:
             self._config = yaml.dump(config, f)
 
-    def print_config(self) -> None:
+    def print(self) -> None:
         self.load_config()
         self._printer.print_title("Workspace Configurations")
-        for k, v in self._config.items():
-            self._printer.print_dictionary(v)
+        self._printer.print_dictionary(self._config)
 
 
 class CriteoConfig(Config):
-    """Manages configurations for DataSource objects."""
+    """Encapsulates the Criteo Labs data source configuration.
 
-    def __init__(self, config_filepath: str) -> None:
+    Args:
+        config_filepath (str): A string containing the path to the YAML configuration file.
+
+    """
+
+    def __init__(self, config_filepath: str = "config\criteo.yaml") -> None:
         super(CriteoConfig, self).__init__(config_filepath)
         self._config = self.get_config()
 
     @property
     def name(self) -> str:
+        """The name of the data source."""
         return self._config["name"]
 
     @property
     def url(self) -> str:
+        """The URL from which the data may be obtained."""
         return self._config["url"]
 
     @property
     def destination(self) -> str:
+        """The local filepath to which the data will be downloaded."""
         return self._config["destination"]
 
     @property
-    def filepath_compressed(self) -> str:
-        return self._config["filepath_compressed"]
-
-    @property
     def filepath_decompressed(self) -> str:
+        """The filepath the uncompressed file after extraction from the gzip archive."""
         return self._config["filepath_decompressed"]
 
     @property
     def filepath_raw(self) -> str:
+        """The filepath to the raw data file."""
         return self._config["filepath_raw"]
 
     @property
-    def filepath_staged(self) -> str:
-        return self._config["filepath_staged"]
+    def workspace(self) -> str:
+        """The workspace into which the DataSource object will be stored."""
+        return self._config["workspace"]
 
     @property
     def sep(self) -> str:
+        """The column separator for the data."""
         return self._config["sep"]
 
     @property
     def missing(self) -> str:
+        """Missing value indicators to be converted to NaNS"""
         return self._config["missing"]
 
     def get_config(self) -> None:
+        """Returns the configuration from the configuration file."""
         with open(self._config_filepath, "r") as f:
             return yaml.full_load(f)
 
     def save_config(self, config) -> None:
+        """Saves the configuration to file."""
         with open(self._config_filepath, "w") as f:
             yaml.dump(config, f)
 
-    def print_config(self) -> None:
+    def print(self) -> None:
+        """Prints the configuration to stdout."""
         config = self.get_config()
-        self._printer.print_title("Criteo Configurations")
-        for k, v in config.items():
-            self._printer.print_dictionary(v)
+        self._printer.print_title("Criteo Data Source Configuration")
+        self._printer.print_dictionary(config)

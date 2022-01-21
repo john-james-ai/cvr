@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Friday, January 21st 2022, 12:59:55 am                                                                        #
+# Modified : Friday, January 21st 2022, 5:31:23 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -19,6 +19,7 @@
 # ======================================================================================================================== #
 """Defines the pipeline construction and operation classes."""
 from abc import ABC, abstractmethod
+import os
 from datetime import datetime
 import logging
 import pandas as pd
@@ -89,7 +90,6 @@ class Pipeline(ABC):
         logname = self.__class__.__name__.lower() + "_" + self._name
         logfilename = logname + ".log"
         logfilepath = os.path.join("workspaces", self._workspace, "logs", logfilename)
-        logfile
         logging.root.handlers = []
         self._logger = logging.getLogger(self._name)
         self._logger.setLevel(logging.DEBUG)
