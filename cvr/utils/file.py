@@ -11,37 +11,55 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 2:03:27 am                                                                        #
-# Modified : Sunday, January 16th 2022, 4:21:22 pm                                                                         #
+# Modified : Wednesday, January 19th 2022, 2:46:08 am                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
 # Copyright: (c) 2021 Bryant St. Labs                                                                                      #
 # ======================================================================================================================== #
+#%%
 import pandas as pd
-import random
+import numpy as np
+
 
 # ------------------------------------------------------------------------------------------------------------------------ #
-def sample_pickle(filepath: str, frac: float, stratify: str = None, random_state: int = None) -> pd.DataFrame:
-    """Sampling on pickled dataframes
+def sample_csv(source: str, destination: str, frac: float = 0.01, random_state: int = None) -> None:
+    """Samples from source and saves to destination
 
     Args:
-        filepath (str): Path to the file
+        source (str): Path to input file
+        destination (str): Path to output file
         frac (float): The fraction of observations to draw as fraction
-        stratify (str): None or the column to stratify
         random_state (int): Pseudo random generator seed
 
-    Returns:
-        DataFrame containing the requested sample.
     """
+    df = pd.read_csv(source, low_memory=False, index_col=False, sep="\t")
+    n = int(len(df) * frac)
+    df2 = df.sample(n, replace=False, random_state=random_state)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    df2.to_csv(destination, sep="\t")
 
-    # Read the dataframe from pickle
-    df = pd.read_pickle(filepath)
 
-    # Sample if stratify
-    if stratify is not None:
-        df = df.groupby(by=[stratify]).sample(frac=frac, random_state=random_state)
-    else:
+# ------------------------------------------------------------------------------------------------------------------------ #
+def sample_pkl(source: str, destination: str, frac: float = 0.01, random_state: int = None) -> None:
+    """Samples from source and saves to destination
 
-        df = df.sample(frac=frac, random_state=random_state)
+    Args:
+        source (str): Path to input file
+        destination (str): Path to output file
+        frac (float): The fraction of observations to draw as fraction
+        random_state (int): Pseudo random generator seed
 
-    return df
+    """
+    df = pd.read_pickle(source)
+    n = int(len(df) * frac)
+    df2 = df.sample(n, replace=False, random_state=random_state)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    df2.to_pickle(destination)
+
+
+source = "data\criteo\staged\criteo.pkl"
+destination = "tests\\test_data\staged\criteo.pkl"
+frac = 0.01
+random_state = 55
+sample_pkl(source, destination, frac, random_state)

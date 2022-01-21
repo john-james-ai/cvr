@@ -14,15 +14,22 @@ tests/**/*.csv
 *.pkl
 *.gz
 
+# Logs
+/logs/
+
+# Download chunks
+*.tmp.driveupload
+
 # Jupyterbook Build Artifacts
 /book/_build/
 
 # Datashader
 /datashader-examples/
 
-# Workspaces
+# Workspaces and Repositories
 /workspaces/
 /workspaces/Tom/staged/000_tom_staged_tom.pkl
+/repositories/
 
 
 # Distribution / packaging
@@ -107,3 +114,6 @@ target/
 
 # Mypy cache
 .mypy_cache/
+tests/test_data/criteo/external/Criteo_Conversion_Search/CriteoSearchData
+tests/test_data/criteo/external/Criteo_Conversion_Search/._README.md
+tests/test_data/criteo/external/Criteo_Conversion_Search/README.md

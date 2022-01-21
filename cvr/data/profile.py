@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 1:33:06 pm                                                                         #
-# Modified : Tuesday, January 18th 2022, 10:27:51 am                                                                       #
+# Modified : Thursday, January 20th 2022, 12:22:01 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -119,6 +119,8 @@ class DataProfiler:
         d["n"] = len(self._data)
         d["Missing"] = self._data.isna().sum()
         d["Missingness"] = round(d["Missing"] / d["n"] * 100, 2)
+        d["Rows w/ Missing"] = self._data.isna().any(axis=1).sum()
+        d["Columns w/ Missing"] = self._data.isna().any(axis=0).sum()
         df = pd.DataFrame(d)
 
         self._profile["missing"] = df

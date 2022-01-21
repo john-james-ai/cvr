@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 4:41:43 am                                                                        #
-# Modified : Wednesday, January 19th 2022, 12:24:46 am                                                                     #
+# Modified : Wednesday, January 19th 2022, 2:52:35 am                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -74,6 +74,13 @@ class ProjectTests:
         assert ds2.id == ds3.id, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
         assert ds2.workspace == ds3.workspace, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
         assert ds2.stage == ds3.stage, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+
+        logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
+    def test_reporting(self):
+        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
+        self._project.inventory
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 

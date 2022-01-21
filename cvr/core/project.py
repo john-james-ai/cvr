@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 4:42:38 am                                                                         #
-# Modified : Tuesday, January 18th 2022, 11:27:58 pm                                                                       #
+# Modified : Wednesday, January 19th 2022, 5:33:41 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -21,7 +21,9 @@ import os
 from datetime import datetime
 import pandas as pd
 import logging
+import yaml
 
+from cvr.core.repository import Repository
 from cvr.core.workspace import Workspace
 from cvr.utils.config import WorkspaceConfig, ProjectConfig
 from cvr.data.source import DataSourceConfig, CriteoETL
@@ -39,6 +41,8 @@ logger = logging.getLogger(__name__)
 class Project:
     """Encapsulates a workspace.."""
 
+    filepath = "workspaces/inventory.yaml"
+
     def __init__(self, name) -> None:
         self._name = name
         self._source = "criteo"
@@ -49,9 +53,6 @@ class Project:
 
         self._datasource_config = DataSourceConfig()
         self._project_config = ProjectConfig()
-        self._workspace_config = WorkspaceConfig()
-        self._datastore = Datastore()
-        self._printer = Printer()
 
     @property
     def name(self) -> str:
@@ -117,8 +118,31 @@ class Project:
         workspace = Workspace(name=self._workspace_name, description=self._workspace_description)
         workspace.initialize()
         workspace.add_dataset(dataset)
+        self._add_workspace(workspace)
         return workspace
 
     @property
     def workspace(self) -> None:
         return self._workspace
+
+    def add_workspace(self, workspace: Workspace) -> None:
+        inventory = {} or self._load_inventory()
+        d = {"description": workspace.description, "directory": workspace.directory}
+        inventory[workspace.name] = d
+        self._save_inventory(inventory)
+
+    def remove_workspace(self, name: str) -> None:
+        inventory = {} or self._load_inventory()
+        if name not in inventory.keys():
+            raise KeyError("Workspace {} does not exist.".format(name))
+        else:
+            del inventory[name]
+        self._save_inventory(inventory)
+
+    @property
+    def inventory(self) -> None:
+        inventory = self._load_inventory()
+        df = pd.DataFrame.from_dict(inventory, orient="index")
+        self._printer.print_title("Project {} Workspaces".format(self._name))
+        self._printer.print_dataframe(df)
+        return df

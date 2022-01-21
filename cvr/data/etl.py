@@ -17,6 +17,7 @@
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
 # Copyright: (c) 2022 Bryant St. Labs                                                                                      #
 # ======================================================================================================================== #
+"""Defines Tasks for the extraction, transformation and loading of source data."""
 from abc import ABC, abstractmethod
 import os
 import logging
@@ -26,92 +27,91 @@ import requests
 import tarfile
 import shutil
 from datetime import datetime
+from typing import Union
 import warnings
 
 warnings.filterwarnings("ignore")
-
+from cvr.utils.config import CriteoConfig
+from cvr.core.pipeline import PiplineCommand, PipelineBuilder, Pipeline
 from cvr.data import criteo_dtypes, criteo_columns
 from cvr.utils.config import DataSourceConfig, ProjectConfig
-from cvr.utils.printing import Printer
+from cvr.core.task import Task
 
 # ------------------------------------------------------------------------------------------------------------------------ #
-logging.basicConfig(level=logging.ERROR)
-# ------------------------------------------------------------------------------------------------------------------------ #
-class ETL(ABC):
-    """Abstract base class for extract transform load."""
+class CriteoETLCommand:
+    """Command object for the ExtractWebGZ"""
 
-    def __init__(
-        self,
-        datasource_config: DataSourceConfig,
-        project_config: ProjectConfig,
-        source: str,
-        force: bool = False,
-        verbose=False,
-    ) -> None:
-        # Parameters
-        self._datasource_config = datasource_config
-        self._project_config = project_config
-        self._source = source
+    def __init__(self, config: CriteoConfig) -> None:
+        criteo = config.get_criteo()
+        self._name = criteo["name"]
+        self._url = criteo["url"]
+        self._filepath_compressed = criteo["filepath_compressed"]
+        self._filepath_decompressed = criteo["filepath_decompressed"]
+        self._filepath_raw = criteo["filepath_raw"]
+        self._filepath_staged = criteo["filepath_staged"]
+        self._sep = criteo["sep"]
+        self._missing = criteo["missing"]
+        self._force = False
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def url(self) -> str:
+        return self._url
+
+    @property
+    def filename_compressed(self) -> str:
+        return self._filename_compressed
+
+    @property
+    def filename_decompressed(self) -> str:
+        return self._filename_decompressed
+
+    @property
+    def filename_raw(self) -> str:
+        return self._filename_raw
+
+    @property
+    def filename_staged(self) -> str:
+        return self._filename_staged
+
+    @property
+    def sep(self) -> str:
+        return self._sep
+
+    @property
+    def missing(self) -> str:
+        return self._missing
+
+    @property
+    def force(self) -> bool:
+        return self._force
+
+    @force.setter
+    def force(self, force: bool) -> None:
         self._force = force
-        self._verbose = verbose
 
-        self._filepath_external = None
-        self._filepath_decompressed = None
-        self._filepath_raw = None
-        self._filepath_staged = None
 
-        self._df = None
+# ------------------------------------------------------------------------------------------------------------------------ #
+class CriteoExtract(Task):
+    """Defines the Criteo extract transform load pipeline."""
 
-        self._start = None
-        self._end = None
+    def __init__(self, command: CriteoETLCommand) -> None:
+        self._command = command
 
-        self._printer = Printer()
-        self._config_logging(verbose)
+    def _run(self, logger: logging) -> None:
+        self._logger = logger
+        self._logger.info("\t{} started.".format(__class__.__name__))
 
-    @abstractmethod
-    def config(self) -> None:
-        """Sets configuration parameters."""
-        pass
-
-    @abstractmethod
-    def _download(self) -> None:
-        pass
-
-    @abstractmethod
-    def _decompress(self) -> None:
-        pass
-
-    @abstractmethod
-    def _transform(self) -> None:
-        pass
-
-    @abstractmethod
-    def _load(self) -> None:
-        pass
-
-    @abstractmethod
-    def _save(self) -> None:
-        pass
-
-    def etl(self) -> None:
-        """Primary entry point. Method executes entire data pipeline from source to staging."""
-        self.extract()
-        self.transform()
-        self.load()
-        self.summary
-
-    def extract(self) -> None:
-        self._start = datetime.now()
-        self._logger.info("\tExtract process started at {}.".format(self._start))
-
-        self.config()
         self.download()
         self.decompress()
         self.save()
 
         self._end = datetime.now()
         self._extract_duration = self._end - self._start
-        self._logger.info("\tExtract completed at {}. Duration: {}".format(self._end, self._extract_duration))
+        self._logger.info("\t{} Completed. Duration: {}".format(__class__.__name__, self._extract_duration))
         return self
 
     def download(self) -> None:
@@ -125,6 +125,17 @@ class ETL(ABC):
         self._logger.info("\t\tDownload completed at {}. Duration: {}".format(end, self._download_duration))
         return self
 
+    def _download(self) -> None:
+        """Downloads Criteo data to a local directory."""
+
+        if not os.path.exists(self._command.filepath_compressed):
+            os.makedirs(os.path.dirname(self._command.filepath_compressed), exist_ok=True)
+
+            response = requests.get(self._command.url, stream=True)
+            if response.status_code == 200:
+                with open(self._command.filepath_compressed, "wb") as f:
+                    f.write(response.raw.read())
+
     def decompress(self) -> None:
         start = datetime.now()
         self._logger.info("\t\tDecompression started at {}.".format(start))
@@ -135,6 +146,12 @@ class ETL(ABC):
         self._decompress_duration = end - start
         self._logger.info("\t\tDecompression completed at {}. Duration: {}".format(end, self._decompress_duration))
 
+    def _decompress(self) -> None:
+
+        if not os.path.exists(self._command.filepath_decompressed) or self._force:
+            data = tarfile.open(self._command.filepath_compressed)
+            data.extractall(os.path.dirname(os.path.dirname(self._command.filepath_decompressed)))
+
     def save(self) -> None:
         start = datetime.now()
         self._logger.info("\t\tSave started at {}.".format(start))
@@ -144,6 +161,13 @@ class ETL(ABC):
         end = datetime.now()
         self._save_duration = end - start
         self._logger.info("\t\tSave completed at {}. Duration: {}".format(end, self._save_duration))
+
+    def _save(self) -> None:
+        """Copies the data to the raw data directory."""
+
+        if not os.path.exists(self._command.filepath_raw) or self._force:
+            os.makedirs(os.path.dirname(self._command.filepath_raw), exist_ok=True)
+            shutil.copyfile(self._command.filepath_decompressed, self._command.filepath_raw)
 
     def transform(self) -> None:
         start = datetime.now()
@@ -164,18 +188,6 @@ class ETL(ABC):
         end = datetime.now()
         self._load_duration = end - start
         self._logger.info("\tLoad completed at {}. Duration: {}".format(end, self._load_duration))
-
-    @property
-    @abstractmethod
-    def summary(self) -> None:
-        pass
-
-    def _config_logging(self, verbose: bool = False) -> None:
-        # Log Messaging
-        self._logger = logging.getLogger(__name__)
-        self._logger.setLevel(logging.ERROR)
-        if verbose:
-            self._logger.setLevel(logging.INFO)
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #

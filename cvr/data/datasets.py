@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Tuesday, January 18th 2022, 11:57:38 pm                                                                       #
+# Modified : Thursday, January 20th 2022, 1:32:34 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -50,10 +50,10 @@ import uuid
 
 from cvr.data.transform import Transformer
 from cvr.data.profile import DataProfiler
-from cvr.utils.config import WorkspaceConfig
+from cvr.utils.config import StageConfig
 from cvr.visuals.visualize import Visual
 from cvr.utils.printing import Printer
-from cvr.data import raw_dtypes
+from cvr.data import criteo_dtypes
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 logging.basicConfig(level=logging.INFO)
@@ -66,11 +66,15 @@ class Dataset:
     def __init__(
         self,
         id: str,
+        name: str,
+        filepath: str,
         data: pd.DataFrame,
         metadata: dict,
         profile: DataProfiler,
     ) -> None:
         self._id = id
+        self._name = name
+        self._filepath = filepath
         self._df = data
         self._metadata = metadata
         self._profile = profile
@@ -78,7 +82,6 @@ class Dataset:
         self._visual = Visual()
         self._transform = Transformer(self._visual)
         self._verbose = False
-        self._filepath = None
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                               PROPERTIES                                                            #
@@ -297,26 +300,29 @@ class Dataset:
 class AbstractDatasetBuilder(ABC):
     """Abstract base class for all Dataset builders."""
 
+    filepath = "config\builder.yaml"
+
     def __init__(self, workspace_name) -> None:
+
         self._workspace_name = workspace_name
 
-        self._id = None
+        self._dataset_id = None
+        self._dataset_name = None
+        self._filepath = None
         self._data = None
-        self._name = None
         self._stage = None
         self._creator = None
-        self._random_state = None
-
-        self._config = WorkspaceConfig()
-
         self._dataset = None
+
+        self._random_state = None
+        self._config = BuilderConfig()
 
     def set_data(self, data: pd.DataFrame) -> None:
         self._data = data
         return self
 
-    def set_name(self, name: str) -> None:
-        self._name = name
+    def set_dataset_name(self, dataset_name: str) -> None:
+        self._dataset_name = dataset_name
         return self
 
     def set_stage(self, stage: str) -> None:
@@ -332,45 +338,13 @@ class AbstractDatasetBuilder(ABC):
         return self._dataset
 
     def _validate(self) -> None:
-        assert self._name is not None, "self_name is None"
+        assert self._dataset_name is not None, "self_name is None"
         assert self._workspace_name is not None, "self_workspace_name is None"
         assert self._stage is not None, "self_stage is None"
         config = self._config.get_config()
         assert self._stage in config["stages"], "{} is an invalid stage".format(self._stage)
 
-    def _build_id(self) -> None:
-        self._id = self._get_id(self._stage, self._name)
-
-    def _build_profile(self) -> None:
-        self._profile = DataProfiler(self._data)
-        self._profile.build()
-        return self
-
-    def _build_metadata(self) -> None:
-        self._metadata = {}
-        self._metadata["id"] = self._id
-        self._metadata["name"] = self._name
-        self._metadata["workspace_name"] = self._workspace_name
-        self._metadata["stage"] = self._stage
-        self._metadata["size"] = self._data.memory_usage(deep=True).sum()
-        self._metadata["creator"] = self._creator
-        self._metadata["created"] = datetime.now()
-        return self
-
-    def build(self) -> None:
-        self._validate()
-        self._build_id()
-        self._build_profile()
-        self._build_metadata()
-        self._dataset = Dataset(
-            id=self._id,
-            data=self._data,
-            metadata=self._metadata,
-            profile=self._profile,
-        )
-        return self._dataset
-
-    def _get_id(self, stage: str, name: str) -> str:
+    def _build_dataset_id(self) -> None:
         config = self._config.get_config()
         try:
             seq = config["workspaces"][self._workspace_name]["seq"][stage]
@@ -379,9 +353,43 @@ class AbstractDatasetBuilder(ABC):
             seq = str(seq).zfill(config["id_digits"])
             key = [seq, self._workspace_name, stage, name]
             key = "_".join(key)
-            return key.lower()
+            self._dataset_id = key.lower()
         except KeyError as e:
-            logger.error(e)
+            logger.error("{} is not a valid stage for this workspace.".format(self._stage))
+
+    def _build_filepath(self) -> None:
+        filename = self._dataset_id + ".pkl"
+        self._filepath = os.path.join("workspaces", self._workspace_name, self._stage, filename)
+
+    def _build_profile(self) -> None:
+        self._profile = DataProfiler(self._data)
+        self._profile.build()
+
+    def _build_metadata(self, dataset_id) -> None:
+        self._metadata = {}
+        self._metadata["id"] = self._dataset_id
+        self._metadata["name"] = self._dataset_name
+        self._metadata["workspace_name"] = self._workspace_name
+        self._metadata["stage"] = self._stage
+        self._metadata["size"] = self._data.memory_usage(deep=True).sum()
+        self._metadata["creator"] = self._creator
+        self._metadata["created"] = datetime.now()
+
+    def build(self) -> None:
+        self._validate()
+        self._build_dataset_id()
+        self._build_filepath()
+        self._build_profile()
+        self._build_metadata()
+        self._dataset = Dataset(
+            id=self._dataset_id,
+            name=self._dataset_name,
+            filepath=self._filepath,
+            data=self._data,
+            metadata=self._metadata,
+            profile=self._profile,
+        )
+        return self._dataset
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 21st 2021, 7:45:33 pm                                                                       #
-# Modified : Monday, January 17th 2022, 8:46:32 pm                                                                         #
+# Modified : Thursday, January 20th 2022, 1:32:33 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -124,7 +124,7 @@ categorical_descriptive_stats = [
 ]
 
 
-raw_dtypes = {
+criteo_dtypes = {
     "sale": "category",
     "sales_amount": np.float64,
     "conversion_time_delay": np.int64,

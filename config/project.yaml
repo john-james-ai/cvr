@@ -1,8 +1,17 @@
-datasource_config: config\datasource.yaml
-workspace_config: config\workspace.yaml
-external_data_dir: data\criteo\external\
-raw_data_dir: data\criteo\raw\
-staged_data_dir: data\criteo\staged\
-raw_data_filepath: data\criteo\raw\criteo.csv
-staged_data_filepath: data\criteo\staged\criteo.pkl
+configs:
+  datasource_config: config\datasource.yaml
+filepaths:
+  external_data_dir: data\criteo\external\
+  raw_data_dir: data\criteo\raw\
+  staged_data_dir: data\criteo\staged\
+  raw_data_filepath: data\criteo\raw\criteo.csv
+  staged_data_filepath: data\criteo\staged\criteo.pkl
 random_state: 55
+id_digits: 3
+stages:
+- staged
+- interim
+- clean
+- features
+- processed
+
