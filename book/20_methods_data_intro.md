@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 # Data
-Data are provided by Criteo Labs {cite}`tallisReactingVariationsProduct2018` and contains a sample of logs obtained from Criteo Predictive Search (CPS) over a 90 day period. Each row in the dataset represents an action (i.e. click) performed by the user on a product related advertisement. The product advertisement was shown to the user, post the user expressing an intent via an online search engine.  Each row in the dataset, contains product characteristics (age, brand, gender, price), time of the click ( subject to uniform shift), user characteristics and device information. The logs also contain information on whether the clicks eventually led to a conversion (product was bought) within a 30 day window and the time between click and the conversion.
+Data are provided by Criteo Labs {cite}`tallisReactingVariationsProduct2018` and contains a 90-day sample of logs obtained from Criteo Predictive Search (CPS). Each row in the dataset represents an action (i.e. click) performed by the user on a product related advertisement. The product advertisement was shown to the user, post the user expressing an intent via an online search engine.  Each row in the dataset, contains product characteristics (age, brand, gender, price), time of the click ( subject to uniform shift), user characteristics and device information. The logs also contain information on whether the clicks eventually led to a conversion (product was bought) within a 30 day window and the time between click and the conversion.
 
 **Delimited**: \t (tab separated)
 
