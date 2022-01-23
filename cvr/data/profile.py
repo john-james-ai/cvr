@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 1:33:06 pm                                                                         #
-# Modified : Thursday, January 20th 2022, 12:22:01 pm                                                                      #
+# Modified : Saturday, January 22nd 2022, 6:14:14 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -32,11 +32,12 @@ logger = logging.getLogger(__name__)
 class DataProfiler:
     """Data profiler for Dataset objects."""
 
-    def __init__(self, data: pd.DataFrame) -> None:
-        self._data = data
+    def __init__(self) -> None:
+        self._data = None
         self._profile = {}
 
-    def build(self) -> None:
+    def build(self, data: pd.Dataframe) -> None:
+        self._data = data
         self._compute_summary()
         self._compute_numerics()
         self._compute_categoricals()

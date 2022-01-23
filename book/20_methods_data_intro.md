@@ -43,7 +43,7 @@ Note : All categorical features have been hashed.
 
 **Dataset Size**
   - Compressed: 310 MB
-  - Decompressed: 6.4 GB
+  - ExtractRawDataed: 6.4 GB
 
 **Data Access**
 

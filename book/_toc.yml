@@ -10,5 +10,6 @@ parts:
   - caption: Methods
     chapters:
       - file: 20_methods_data_intro
-      - file: 21_methods_data_profile
+      - file: 21_methods_data_acquisition
+      - file: 22_methods_data_profile
 

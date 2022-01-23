@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:16:00 am                                                                     #
-# Modified : Sunday, January 16th 2022, 12:58:42 am                                                                        #
+# Modified : Saturday, January 22nd 2022, 2:14:56 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -24,112 +24,88 @@ import numpy as np
 import inspect
 from itertools import product
 
-from cvr.utils.config import DataSourceConfig, ProjectConfig
+from cvr.utils.config import DatastoreConfig
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ProjectConfigTests:
+class DatastoreConfigTests:
+    def __init__(self):
+        self.ds = DatastoreConfig()
 
-    config = {"workspace": "dev", "random_state": 55, "sample_size": 0.01}
+    def test_workspace(self):
+        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_setup(self):
-        c = ProjectConfig()
-        c.save_config(ProjectConfigTests.config)
+        workspace = "dev"
+        self.ds.workspace = workspace
+        assert self.ds.workspace == "dev", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-    def test_get_config(self):
-        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        workspace = "prod"
+        self.ds.datastore = workspace
+        assert self.ds.workspace == "prod", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-        c = ProjectConfig()
-        config = c.get_config()
-        for k, v in config.items():
-            assert ProjectConfigTests.config[k] == v, logger.error(
-                "Failure in {}. k={}, v={}".format(inspect.stack()[0][3], k, v)
-            )
+        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        logger.info("    Successfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+    def test_add_dataset_pipeline(self):
+        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_properties(self):
-        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        pipeline = "test_pipe"
+        version = 22
+        filename_parts = [self.ds.workspace, str(version).zfill(3), pipeline]
+        filename = "_".join(filename_parts) + ".pkl"
+        filepath = os.path.join("workspaces", self.ds.workspace, pipeline, version, filename)
+        self.ds.add_dataset(pipeline, version)
+        assert ds.get_dataset_filepath == filepath, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-        c = ProjectConfig()
-        assert c.random_state == ProjectConfigTests().config["random_state"], logger.error(
-            "Failure in {}.".format(inspect.stack()[0][3])
-        )
+        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        c.random_state = 33
-        assert c.random_state == 33, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+    def test_add_dataset_task(self):
+        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        assert c.sample_size == ProjectConfigTests().config["sample_size"], logger.error(
-            "Failure in {}.".format(inspect.stack()[0][3])
-        )
+        pipeline = "test_pipe"
+        version = 22
+        task = "grocery_store"
+        task_seq = 32
+        filename_parts = [self.ds.workspace, str(version).zfill(3), pipeline, task_seq, task]
+        filename = "_".join(filename_parts) + ".pkl"
+        filepath = os.path.join("workspaces", self.ds.workspace, pipeline, version, filename)
+        self.ds.add_dataset(pipeline, version, task_seq, task)
+        assert ds.get_dataset_filepath == filepath, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-        c.sample_size = 0.1
-        assert c.sample_size == 0.1, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        assert c.workspace == "dev", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+    def test_get_dataset_pipeline(self):
+        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        c.set_prod_workspace()
-        assert c.workspace == "prod", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        df = self.ds.get_datasets(pipeline="test_pipe")
+        assert df.shape[0] == 2, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-        c.set_dev_workspace()
-        assert c.workspace == "dev", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        logger.info("    Successfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+    def test_remove_dataset(self):
+        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
+        pipeline = "test_pipe"
+        version = 22
+        task = "grocery_store"
+        task_seq = 32
+        df = self.ds.get_datasets(pipeline="test_pipe")
+        assert df.shape[0] == 2, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-class DataSourceConfigTests:
-
-    criteo = {
-        "url": "http://go.criteo.net/criteo-research-search-conversion.tar.gz",
-        "destination": "data/files/raw/",
-        "compressed": "criteo.tar.gz",
-        "decompressed": "Criteo_Conversion_Search/CriteoSearchData",
-        "filename": "criteo.csv",
-        "sep": "\\t",
-        "missing": -1,
-        "name": "Criteo Sponsored Search Conversion Log Dataset",
-    }
-
-    def test_get_config(self):
-        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-        c = DataSourceConfig()
-        config = c.get_config()
-        criteo = config["criteo"]
-        for k, v in criteo.items():
-            assert DataSourceConfigTests.criteo[k] == v, logger.error(
-                "Failure in {}. k={}, v={}".format(inspect.stack()[0][3], k, v)
-            )
-
-        config = c.get_config("criteo")
-        for k, v in config.items():
-            assert DataSourceConfigTests.criteo[k] == v, logger.error(
-                "Failure in {}. k={}, v={}".format(inspect.stack()[0][3], k, v)
-            )
-
-        logger.info("    Successfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-    def test_print_config(self):
-        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-        c = DataSourceConfig()
-        c.print_config()
-
-        logger.info("    Successfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
 
 if __name__ == "__main__":
-    t = ProjectConfigTests()
-    t.test_setup()
-    t.test_get_config()
-    t.test_properties()
-
-    t = DataSourceConfigTests()
-    t.test_get_config()
-    t.test_print_config()
+    logger.info("Started DatastoreConfigTests")
+    t = DatastoreConfigTests()
+    t.test_workspace()
+    t.test_add_dataset_pipeline()
+    t.test_add_dataset_task()
+    t.test_get_dataset_pipeline()
+    t.test_remove_dataset()
+    logger.info("Completed DatastoreConfigTests")
 
 
 # %%

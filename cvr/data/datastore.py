@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 3:14:22 am                                                                        #
-# Modified : Sunday, January 16th 2022, 12:29:55 am                                                                        #
+# Modified : Saturday, January 22nd 2022, 3:08:25 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -23,6 +23,7 @@ import logging
 from datetime import datetime
 import json
 
+from cvr.utils.config import DatastoreConfig
 from cvr.utils.printing import Printer
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -32,20 +33,23 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------------------------------ #
 #                                                 DATASTORE                                                                #
 # ------------------------------------------------------------------------------------------------------------------------ #
-class DataStore:
+class Datastore:
     """Dataset repository and inventory management."""
 
-    inventory = "data/datastore.json"
-    columns = ["name", "workspace", "stage", "version", "path", "created", "saved"]
-
     def __init__(self) -> None:
+        self._config = DatastoreConfig()
+        self._directory = self._config["directory"]
+        self._inventory = self._config["inventory"]
+        self._workspace = self._config["workspace"]
         self._printer = Printer()
 
-    def get(self, workspace: str, stage: str, name: str, version: int) -> Dataset:
-        filepath = self._get_filepath(workspace, stage, name, version)
+    def get(self, pipeline: str, stage: str, task: str = None) -> Dataset:
+        filepath = self._get_filepath(pipeline, stage, task)
 
         if os.path.exists(filepath):
             return self._load_dataset(filepath)
+        else:
+            raise FileNotFoundError("No file found for pipeline {} stage {} task {}")
 
     def add(self, dataset: Dataset) -> None:
         """Adds a Dataset Object to the repository.
@@ -86,25 +90,23 @@ class DataStore:
 
     def get_inventory(self) -> pd.DataFrame:
         """Returns inventory as a dataframe"""
-        inventory = self._load_inventory()
-        df = pd.DataFrame.from_dict(inventory, orient="index", columns=DataStore.columns)
+        df = self._load_inventory()
         return df
 
     def print_inventory(self) -> None:
         df = self.get_inventory()
-        title = "Inventory of Dataset Objects"
+        title = "Datastore Inventory"
         self._printer.print_dataframe(df, title)
 
     def _load_inventory(self) -> dict:
         if os.path.exists(DataStore.inventory):
-            with open(DataStore.inventory, "r") as f:
-                return json.loads(f)
+            return pd.read_pickle(Datastore.inventory)
         else:
-            return {}
+            return pd.DataFrame()
 
     def _save_inventory(self, inventory: dict) -> None:
-        with open(DataStore.inventory, "w") as f:
-            json.dump(inventory, f)
+        os.makedirs(os.path.dirname(DataStore.inventory))
+        inventory.to_pickle(DataStore.inventory)
 
     def _add_inventory(self, dataset: Dataset, filepath: str) -> None:
         inventory = self._load_inventory()
@@ -124,17 +126,15 @@ class DataStore:
         inventory.pop(dataset.id, None)
         self._save_inventory(inventory)
 
-    def _get_filepath(self, workspace: str, stage: str, name: str, version: int) -> str:
+    def _get_filepath(self, pipeline: str, stage: str, task: str = None) -> str:
+        task = pipeline if task is None else task
         inventory = self.get_inventory()
         return inventory.loc[
-            (inventory["workspace"] == workspace)
-            & (inventory["stage"] == stage)
-            & (inventory["name"] == name)
-            & (inventory["version"] == version)
+            (inventory["workspace"] == workspace) & (inventory["stage"] == stage) & (inventory["task"] == task)
         ]["filepath"].values
 
     def _format_filepath(self, dataset: Dataset) -> str:
-        directory = os.path.join("data", dataset.workspace, dataset.stage)
+        directory = os.path.join("data", self._workspace, dataset.stage, dataset.task)
         filename = ""
         filename += dataset.workspace + "_"
         filename += dataset.stage + "_"

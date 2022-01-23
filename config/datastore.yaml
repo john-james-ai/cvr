@@ -1,0 +1,4 @@
+---
+directory = data\datastore
+inventory = data\datastore\inventory.pkl
+workspace = dev

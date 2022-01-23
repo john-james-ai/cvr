@@ -1,8 +1,7 @@
-id_digits: 3
-stages:
-- staged
-- interim
-- clean
-- features
-- processed
-
+---
+current: dev
+datastore_directory: datastore
+datastore_inventory: datastore\inventory.pkl
+pipelines_directory: pipelines
+pipelines_inventory: pipelines\inventory.pkl
+workspaces:

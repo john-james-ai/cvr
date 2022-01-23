@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 5:54:01 pm                                                                        #
-# Modified : Thursday, January 20th 2022, 1:36:32 pm                                                                       #
+# Modified : Friday, January 21st 2022, 1:42:03 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -127,13 +127,13 @@ class ETL(ABC):
 
     def decompress(self) -> None:
         start = datetime.now()
-        self._logger.info("\t\tDecompression started at {}.".format(start))
+        self._logger.info("\t\tExtractRawDataion started at {}.".format(start))
 
         self._decompress()
 
         end = datetime.now()
         self._decompress_duration = end - start
-        self._logger.info("\t\tDecompression completed at {}. Duration: {}".format(end, self._decompress_duration))
+        self._logger.info("\t\tExtractRawDataion completed at {}. Duration: {}".format(end, self._decompress_duration))
 
     def save(self) -> None:
         start = datetime.now()

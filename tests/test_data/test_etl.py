@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Friday, January 21st 2022, 4:15:40 am                                                                         #
+# Modified : Friday, January 21st 2022, 1:42:03 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,7 +26,7 @@ from datetime import datetime
 import inspect
 import time
 
-from cvr.core.task import Download, Decompress, Copy, ConvertDtypes, SetNA, SavePKLDataFrame
+from cvr.core.task import Download, ExtractRawData, Copy, ConvertDtypes, SetNA, SavePKLDataFrame
 from cvr.core.pipeline import PipelineCommand, DataPipelineBuilder, DataPipeline
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.utils.config import CriteoConfig
@@ -51,7 +51,7 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self._download = Download(source=self._config.url, destination=self._config.destination)
-        self._decompress = Decompress(source=self._config.destination, destination=self._config.filepath_decompressed)
+        self._decompress = ExtractRawData(source=self._config.destination, destination=self._config.filepath_decompressed)
         self._copy = Copy(source=self._config.filepath_decompressed, destination=self._config.filepath_raw)
         self._load = ConvertDtypes(source=self._config.filepath_raw)
         self._setna = SetNA(value=[-1, "-1"])

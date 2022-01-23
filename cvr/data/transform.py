@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, January 11th 2022, 7:54:07 am                                                                        #
-# Modified : Tuesday, January 18th 2022, 11:39:17 am                                                                       #
+# Modified : Saturday, January 22nd 2022, 6:17:02 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -33,7 +33,7 @@ from cvr.visuals.visualize import Visual
 # ------------------------------------------------------------------------------------------------------------------------ #
 
 
-class Transformer:
+class Transformation:
     """Applies and evaluates transformations and their effects on data distributions."""
 
     def __init__(self, visual: Visual) -> None:
