@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 1:33:06 pm                                                                         #
-# Modified : Saturday, January 22nd 2022, 6:14:14 am                                                                       #
+# Modified : Sunday, January 23rd 2022, 12:56:23 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -36,47 +36,55 @@ class DataProfiler:
         self._data = None
         self._profile = {}
 
-    def build(self, data: pd.Dataframe) -> None:
+    def build(self, data: pd.DataFrame) -> None:
         self._data = data
-        self._compute_summary()
-        self._compute_numerics()
-        self._compute_categoricals()
-        self._compute_missing()
-        self._compute_missing_summary()
-        self._compute_cardinality()
-        self._compute_metrics()
-        self._compute_datatypes(),
 
     @property
     def summary(self) -> None:
+        if not "summary" in self._profile.keys():
+            self._compute_summary()
         return self._profile["summary"]
 
     @property
     def numerics(self) -> None:
+        if not "numerics" in self._profile.keys():
+            self._compute_numerics()
         return self._profile["numerics"]
 
     @property
     def categoricals(self) -> None:
+        if not "categoricals" in self._profile.keys():
+            self._compute_categoricals()
         return self._profile["categoricals"]
 
     @property
     def missing(self) -> None:
+        if not "missing" in self._profile.keys():
+            self._compute_missing()
         return self._profile["missing"]
 
     @property
     def missing_summary(self) -> None:
+        if not "missing_summary" in self._profile.keys():
+            self._compute_missing_summary()
         return self._profile["missing_summary"]
 
     @property
     def cardinality(self) -> None:
+        if not "cardinality" in self._profile.keys():
+            self._compute_cardinality()
         return self._profile["cardinality"]
 
     @property
     def metrics(self) -> None:
+        if not "metrics" in self._profile.keys():
+            self._compute_metrics()
         return self._profile["metrics"]
 
     @property
     def datatypes(self) -> None:
+        if not "datatypes" in self._profile.keys():
+            self._compute_datatypes(),
         return self._profile["datatypes"]
 
     def _compute_summary(self) -> dict:

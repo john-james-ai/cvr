@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Saturday, January 22nd 2022, 9:08:33 pm                                                                       #
+# Modified : Saturday, January 22nd 2022, 11:45:02 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -80,6 +80,10 @@ class WorkspaceConfig(Config):
         config = self.load_config()
         config["current"] = workspace
         self.save_config(config)
+
+    def print(self) -> None:
+        config = self.load_config()
+        self._printer.print_dictionary(config, "Workspace Configuration")
 
 
 # ======================================================================================================================== #

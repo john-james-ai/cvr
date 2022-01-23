@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 2:03:27 am                                                                        #
-# Modified : Wednesday, January 19th 2022, 2:46:08 am                                                                      #
+# Modified : Saturday, January 22nd 2022, 11:48:50 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -58,8 +58,25 @@ def sample_pkl(source: str, destination: str, frac: float = 0.01, random_state: 
     df2.to_pickle(destination)
 
 
-source = "data\criteo\staged\criteo.pkl"
-destination = "tests\\test_data\staged\criteo.pkl"
-frac = 0.01
-random_state = 55
-sample_pkl(source, destination, frac, random_state)
+# ------------------------------------------------------------------------------------------------------------------------ #
+def sample_df(data: pd.DataFrame, frac: float, stratify: str = None, random_state: int = None) -> pd.DataFrame:
+    """Sample from the current DataFrame.
+
+    Args:
+        data (pd.DataFrame): The data to sample
+        frac (float): The fraction of observations to draw as fraction
+        stratify (str): None or the column to stratify
+        random_state (int): Pseudo random generator seed
+
+    Returns:
+        DataFrame containing the requested sample.
+    """
+
+    # Sample if stratify
+    if stratify is not None:
+        df = data.groupby(by=[stratify]).sample(frac=frac, random_state=random_state)
+    else:
+
+        df = data.sample(frac=frac, random_state=random_state)
+
+    return df

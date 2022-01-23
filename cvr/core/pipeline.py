@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Saturday, January 22nd 2022, 9:02:59 pm                                                                       #
+# Modified : Sunday, January 23rd 2022, 1:35:59 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -38,6 +38,7 @@ class Pipeline(Asset):
     """Defines interface for pipelines."""
 
     def __init__(self, command: PipelineCommand, tasks: list) -> None:
+        super(Pipeline, self).__init__(command.name, command.stage)
         self._command = command
         self._tasks = tasks
         self._logger = command.logger

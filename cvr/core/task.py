@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Saturday, January 22nd 2022, 10:41:22 pm                                                                      #
+# Modified : Saturday, January 22nd 2022, 11:34:52 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -130,7 +130,7 @@ class Task(ABC):
         dataset_name = command.name + "_" + self.__class__.__name__
         self._dataset_builder.create()
         self._dataset_builder.set_data(data)
-        self._dataset_builder.set_dataset_name(dataset_name)
+        self._dataset_builder.set_name(dataset_name)
         self._dataset_builder.set_stage(command.stage)
         dataset = self._dataset_builder.build()
         return dataset
@@ -145,19 +145,3 @@ class Task(ABC):
         self, logger: logging, data: Union[str, pd.DataFrame, dict] = None, force=False
     ) -> Union[str, pd.DataFrame, dict]:
         pass
-
-
-# ======================================================================================================================== #
-class DatasetCreator(Task):
-    """Classes that create Dataset objects"""
-
-    def __init__(self, **kwargs) -> None:
-        super(DatasetCreator, self).__init__()
-        self._builder = PipelineDatasetBuilder()
-
-    def _create_dataset(self, df: pd.DataFrame) -> Dataset:
-        name = self._create_dataset_name()
-
-    def _create_dataset_name(self) -> str:
-        name = ""
-        name += self._command.pipeline_name, self._stage

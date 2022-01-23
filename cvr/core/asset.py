@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 5:11:23 pm                                                                       #
-# Modified : Saturday, January 22nd 2022, 5:18:10 pm                                                                       #
+# Modified : Sunday, January 23rd 2022, 2:37:51 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -33,7 +33,8 @@ class Asset(ABC):
         self._name = name
         self._stage = stage
         self._version = 0 if version is None else version
-        self._id = stage + "_" + name + "_" + str(self._version).zfill(3)
+        self._aid = stage + "_" + name
+        self._filepath = None
 
     @property
     def name(self) -> str:
@@ -44,5 +45,13 @@ class Asset(ABC):
         return self._stage
 
     @property
-    def id(self) -> str:
-        return self._id
+    def aid(self) -> str:
+        return self._aid
+
+    @property
+    def filepath(self) -> str:
+        return self._filepath
+
+    @filepath.setter
+    def filepath(self, filepath) -> None:
+        self._filepath = filepath

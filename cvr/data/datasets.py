@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Saturday, January 22nd 2022, 10:39:59 pm                                                                      #
+# Modified : Sunday, January 23rd 2022, 1:56:34 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -50,6 +50,7 @@ import platform
 import uuid
 
 from cvr.core.asset import Asset
+
 from cvr.data.transform import Transformation
 from cvr.data.profile import DataProfiler
 from cvr.utils.config import WorkspaceConfig
@@ -64,8 +65,10 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractDataset(Asset):
-    def __init__(self, name: str, stage: str, df: pd.DataFrame, profile: dict) -> None:
+    def __init__(self, name: str, description: str, stage: str, df: pd.DataFrame, profile: DataProfiler) -> None:
+        super(AbstractDataset, self).__init__(name, stage)
         self._name = name
+        self._description = description
         self._stage = stage
         self._df = df
         self._profile = profile
@@ -80,17 +83,20 @@ class AbstractDataset(Asset):
     def _set_id(self) -> None:
         self._id = self._workspace + "_" + self._stage + "_" + self._name + "_"
 
-    def set_task_data(self, task: Task) -> Task:
+    def set_task_data(self, task):
         """Injects a task object with the data from this dataset.
 
         Args:
             task (Task): The task requiring the data
         """
-        if isinstance(task, Task):
-            task.set_data(self._df)
-            return task
-        else:
-            raise UserWarning("Only Task objects are allowed to extract data")
+
+        task.set_data(self._df)
+        return task
+
+    def info(self) -> dict:
+        """Prints column i.e. structural metadata."""
+        self._printer.print_title("Dataset {}".format(self.name))
+        self._df.info()
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                               PROPERTIES                                                            #
@@ -100,10 +106,12 @@ class AbstractDataset(Asset):
         return self._name
 
     @property
-    def info(self) -> dict:
-        """Prints column i.e. structural metadata."""
-        self._printer.print_title("Dataset {}".format(self.name))
-        self._df.info()
+    def workspace(self) -> str:
+        return self._workspace
+
+    @property
+    def description(self) -> str:
+        return self._description
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                  PROFILE PROPERTIES AND METHODS                                                     #
@@ -121,18 +129,15 @@ class AbstractDataset(Asset):
         """Prints descriptive statistics for all numeric columns"""
         subtitle = "Data Type Analysis"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(self._profile.datatypes)
-        else:
-            return self._profile.datatypes
+        self._printer.print_dataframe(self._profile.datatypes)
+        return self._profile.datatypes
 
     @property
     def numeric_statistics(self) -> None:
         """Prints descriptive statistics for all numeric columns"""
         subtitle = "Descriptive Statistics (Quantitative Variables)"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(self._profile.numerics)
+        self._printer.print_dataframe(self._profile.numerics)
         return self._profile.numerics
 
     @property
@@ -140,8 +145,7 @@ class AbstractDataset(Asset):
         """Prints descriptive statistics for all categorical columns"""
         subtitle = "Descriptive Statistics (Qualitative Variables)"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(self._profile.categoricals)
+        self._printer.print_dataframe(self._profile.categoricals)
         return self._profile.categoricals
 
     @property
@@ -149,8 +153,7 @@ class AbstractDataset(Asset):
         """Prints missing data statistics"""
         subtitle = "Missing Data Analysis"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dictionary(self._profile.missing_summary)
+        self._printer.print_dictionary(self._profile.missing_summary)
         return self._profile.missing_summary
 
     @property
@@ -158,8 +161,7 @@ class AbstractDataset(Asset):
         """Prints missing data statistics"""
         subtitle = "Missing Data Analysis"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(self._profile.missing)
+        self._printer.print_dataframe(self._profile.missing)
         return self._profile.missing
 
     @property
@@ -167,8 +169,7 @@ class AbstractDataset(Asset):
         """Prints / returns cardinality of the dataset."""
         subtitle = "Cardinality"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(self._profile.cardinality)
+        self._printer.print_dataframe(self._profile.cardinality)
         return self._profile.cardinality
 
     @property
@@ -176,8 +177,7 @@ class AbstractDataset(Asset):
         """Prints conversion metrics."""
         subtitle = "Metrics"
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dictionary(self._profile.metrics)
+        self._printer.print_dictionary(self._profile.metrics)
         return self._profile.metrics
 
     # ------------------------------------------------------------------------------------------------------------------- #
@@ -191,7 +191,7 @@ class AbstractDataset(Asset):
         """
         df = self._df.head(n)
         subtitle = "First {} Rows".format(str(n))
-        self._printer.print_title(self._metadata.dataset_name, subtitle)
+        self._printer.print_title(self._name, subtitle)
         self._printer.print_dataframe(df)
 
     def tail(self, n: int = 5) -> pd.DataFrame:
@@ -202,7 +202,7 @@ class AbstractDataset(Asset):
         """
         df = self._df.tail(n)
         subtitle = "Last {} Rows".format(str(n))
-        self._printer.print_title(self._metadata.dataset_name, subtitle)
+        self._printer.print_title(self._name, subtitle)
         self._printer.print_dataframe(df)
 
     def sample(self, n: int = 5, as_dict: bool = True, random_state: int = None) -> pd.DataFrame:
@@ -215,7 +215,7 @@ class AbstractDataset(Asset):
         """
         df = self._df.sample(n=n, replace=False, random_state=random_state)
         subtitle = "{} Randomly Selected Samples".format(str(n))
-        self._printer.print_title(self._metadata.dataset_name, subtitle)
+        self._printer.print_title(self._name, subtitle)
         if as_dict is True:
             d = df.to_dict(orient="index")
             for index, data in d.items():
@@ -235,10 +235,9 @@ class AbstractDataset(Asset):
         stats["skew"] = self._df[column].skew()
         stats["kurtosis"] = self._df[column].kurtosis()
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(stats)
+        self._printer.print_dataframe(stats)
 
-        self._transform.explore(self._df, columns=[column])
+        self._transformation.explore(self._df, columns=[column])
         return stats
 
     def categorical_analysis(self, column: str) -> None:
@@ -246,8 +245,7 @@ class AbstractDataset(Asset):
         subtitle = "Frequency Analysis of {}".format(column)
         stats = self._df[column].describe().to_frame().T
         self._printer.print_title(self.description, subtitle)
-        if self._verbose:
-            self._printer.print_dataframe(stats)
+        self._printer.print_dataframe(stats)
 
         self._visual.countplot(self._df, column=column, threshold=20, title=subtitle)
         return stats
@@ -255,8 +253,8 @@ class AbstractDataset(Asset):
 
 # ======================================================================================================================== #
 class Dataset(AbstractDataset):
-    def __init__(self, name: str, stage: str, df: pd.DataFrame, filepath: str):
-        super(Dataset, self).__init__(name, stage, df, filepath)
+    def __init__(self, name: str, description: str, stage: str, df: pd.DataFrame, profile: DataProfiler) -> None:
+        super(Dataset, self).__init__(name, description, stage, df, profile)
 
 
 # ======================================================================================================================== #
@@ -280,8 +278,12 @@ class AbstractDatasetBuilder(ABC):
         self._df = df
         return self
 
-    def set_dataset_name(self, dataset_name: str) -> None:
+    def set_name(self, dataset_name: str) -> None:
         self._dataset_name = dataset_name
+        return self
+
+    def set_description(self, description: str) -> None:
+        self._description = description
         return self
 
     def set_stage(self, stage: str) -> None:
@@ -296,13 +298,14 @@ class AbstractDatasetBuilder(ABC):
         self._dataset = None
 
     def _build_profile(self) -> None:
-        self._profile = DataProfiler(self._df)
-        self._profile.build()
+        self._profile = DataProfiler()
+        self._profile.build(self._df)
 
     def build(self) -> None:
         self._build_profile()
         self._dataset = Dataset(
             name=self._dataset_name,
+            description=self._description,
             stage=self._stage,
             df=self._df,
             profile=self._profile,

@@ -1,7 +1,6 @@
----
-current: dev
+current: Cafe_Trieste
 datastore_directory: datastore
 datastore_inventory: datastore\inventory.pkl
 pipelines_directory: pipelines
 pipelines_inventory: pipelines\inventory.pkl
-workspaces:
+workspaces: null
