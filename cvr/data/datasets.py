@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Sunday, January 23rd 2022, 1:56:34 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 5:52:27 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -68,7 +68,7 @@ class AbstractDataset(Asset):
     def __init__(self, name: str, description: str, stage: str, df: pd.DataFrame, profile: DataProfiler) -> None:
         super(AbstractDataset, self).__init__(name, stage)
         self._name = name
-        self._description = description
+        self._description = description if description is not None else stage + "_" + name
         self._stage = stage
         self._df = df
         self._profile = profile
@@ -267,6 +267,7 @@ class AbstractDatasetBuilder(ABC):
 
         self._dataset_name = None
         self._stage = None
+        self._description = None
         self._df = None
 
         self._dataset = None

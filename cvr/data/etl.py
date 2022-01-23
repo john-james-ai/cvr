@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Saturday, January 22nd 2022, 11:05:38 pm                                                                      #
+# Modified : Sunday, January 23rd 2022, 5:05:31 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -56,6 +56,9 @@ warnings.filterwarnings("ignore")
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.core.task import Task, STATUS_CODES
 from cvr.core.workspace import Workspace
+from cvr.utils.config import CriteoConfig
+from cvr.core.pipeline import PipelineCommand
+from cvr.data.datasets import Dataset
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -68,9 +71,9 @@ class Extract(Task):
 
     """
 
-    def __init__(self, config: CriteoConfig, chunk_size=10) -> None:
+    def __init__(self, config: dict, chunk_size: int = 10) -> None:
         super(Extract, self).__init__()
-        self._config = config.get_config()
+        self._config = config
         self._chunk_size = chunk_size
         self._logger = None
 
@@ -80,20 +83,20 @@ class Extract(Task):
     def chunk_metrics(self) -> dict:
         return self._chunk_metrics
 
-    def _run(command: PipelineCommand, data: Dataset = None) -> Dataset:
+    def _run(self, command: PipelineCommand, data: Dataset = None) -> Dataset:
         """Downloads the data if it doesn't already exist or if command.force is True."""
 
         # Unpack command logger
         self._logger = command.logger
 
         # Download the data and decompress if not already there. If force is True, download is mandatory
-        if not os.path.exists(self._config.destination) or command.force is True:
+        if not os.path.exists(self._config["destination"]) or command.force is True:
             self._summary = self._download()
             self._decompress()
 
         # Load raw data
         df = pd.read_csv(
-            self._config.filepath_raw, sep="\t", header=None, names=criteo_columns, dtype=criteo_dtypes, low_memory=False
+            self._config["filepath_raw"], sep="\t", header=None, names=criteo_columns, dtype=criteo_dtypes, low_memory=False
         )
 
         # Create Dataset object
@@ -103,12 +106,12 @@ class Extract(Task):
     def _download(self) -> dict:
         """Downloads the data from the site"""
 
-        os.makedirs(os.path.dirname(self._config.destination), exist_ok=True)
+        os.makedirs(os.path.dirname(self._config["destination"]), exist_ok=True)
 
         # Override  start time since we're measuring internet speed
         self._start = datetime.now()
 
-        with requests.get(self._config.source, stream=True) as response:
+        with requests.get(self._config["source"], stream=True) as response:
             self._status_code = response.status_code
             if response.status_code == 200:
                 response_footer = self._process_response(response)
@@ -128,7 +131,7 @@ class Extract(Task):
         # Set chunk_size, defaults to 10Mb
         chunk_size = 1024 * 1024 * self._chunk_size
 
-        with open(self._destination, "wb") as fd:
+        with open(self._config["destination"], "wb") as fd:
             i = 0
             downloaded = 0
             for chunk in response.iter_content(chunk_size=chunk_size):
@@ -211,7 +214,7 @@ class Extract(Task):
             downloaded (int): Total bytes downloaded.
         """
         duration = datetime.now() - self._start
-        Mb = os.path.getsize(self._config.filepath_raw) / (1024 * 1024)
+        Mb = os.path.getsize(self._config["filepath_raw"]) / (1024 * 1024)
         response_header["Chunk Size (Mb)"] = self._chunk_size
         response_header["Chunks Downloaded"] = i + 1
         response_header["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
@@ -221,11 +224,11 @@ class Extract(Task):
         return response_header
 
     def _decompress(self) -> None:
-        data = tarfile.open(self._config.destination)
+        data = tarfile.open(self._config["destination"])
         with tempfile.TemporaryDirectory() as tempdirname:
             data.extractall(tempdirname)
-            tempfilepath = os.path.join(tempdirname, self._config.filepath_extract)
-            shutil.copyfile(tempfilepath, self._config.filepath_raw)
+            tempfilepath = os.path.join(tempdirname, self._config["filepath_extract"])
+            shutil.copyfile(tempfilepath, self._config["filepath_raw"])
 
     def _process_non_response(self, response: requests.Response) -> dict:
         """In case non 200 response from HTTP server.
@@ -255,12 +258,12 @@ class TransformMissing(Task):
     """
 
     def __init__(self, value: Union[str, list]) -> None:
-        super(SetNA, self).__init__()
+        super(TransformMissing, self).__init__()
         self._value = value
         self._before = None
         self._after = None
 
-    def _run(command: PipelineCommand, data: Dataset) -> Dataset:
+    def _run(self, command: PipelineCommand, data: Dataset) -> Dataset:
 
         data.set_task_data(self)
 
@@ -310,7 +313,7 @@ class TransformMissing(Task):
 class LoadDataset:
     """Loads the dataset into the current workspace."""
 
-    def _run(command: PipelineCommand, data: Dataset) -> Dataset:
+    def _run(self, command: PipelineCommand, data: Dataset) -> Dataset:
         """Add the dataset to the current workspace
 
         Args:

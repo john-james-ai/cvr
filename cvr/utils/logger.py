@@ -11,12 +11,13 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 7:48:42 pm                                                                       #
-# Modified : Saturday, January 22nd 2022, 8:05:22 pm                                                                       #
+# Modified : Sunday, January 23rd 2022, 5:30:33 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
 # Copyright: (c) 2022 Bryant St. Labs                                                                                      #
 # ======================================================================================================================== #
+import os
 import logging
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -25,10 +26,10 @@ import logging
 class LoggerFactory:
     """Custom Logger to File and to Console"""
 
-    def get_logger(self, workspace: str, classname: str, name: str, verbose: bool) -> None:
+    def get_logger(self, workspace: str, stage: str, name: str, verbose: bool) -> None:
 
         #  Create log filename and directory
-        logname = classname + "_" + name
+        logname = stage + "_" + name
         logfilename = logname + ".log"
         logfilepath = os.path.join("workspaces", workspace, "logs", logfilename)
         os.makedirs(os.path.dirname(logfilepath), exist_ok=True)

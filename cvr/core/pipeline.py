@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Sunday, January 23rd 2022, 1:35:59 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 5:30:49 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -27,10 +27,64 @@ from collections import OrderedDict
 from typing import Union
 
 from cvr.core.asset import Asset
-from cvr.core.task import Task
 from cvr.utils.logger import LoggerFactory
-from cvr.utils.config import WorkspaceConfig, PipelineConfig
+from cvr.utils.config import WorkspaceConfig
 from cvr.utils.printing import Printer
+
+
+# ======================================================================================================================== #
+class PipelineCommand:
+    def __init__(
+        self,
+        aid: str,
+        workspace: str,
+        stage: str,
+        name: str,
+        logger: logging,
+        force: bool = False,
+        keep_interim: bool = True,
+        verbose: bool = True,
+    ) -> None:
+        self._aid = aid
+        self._workspace = workspace
+        self._stage = stage
+        self._name = name
+        self._logger = logger
+        self._force = force
+        self._keep_interim = keep_interim
+        self._verbose = verbose
+
+    @property
+    def aid(self) -> str:
+        return self._aid
+
+    @property
+    def workspace(self) -> str:
+        return self._workspace
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def stage(self) -> str:
+        return self._stage
+
+    @property
+    def logger(self) -> logging:
+        return self._logger
+
+    @property
+    def force(self) -> str:
+        return self._force
+
+    @property
+    def keep_interim(self) -> str:
+        return self._keep_interim
+
+    @property
+    def verbose(self) -> str:
+        return self._verbose
 
 
 # ======================================================================================================================== #
@@ -134,82 +188,48 @@ class DataPipeline(Pipeline):
             logger.info("{} Complete. Status: {}".format(task.__class__.__name__, task.status))
 
 
-# ======================================================================================================================== #
-class PipelineCommand:
-    def __init__(
-        self,
-        aid: str,
-        workspace: str,
-        stage: str,
-        name: str,
-        logger: logging,
-        force: bool = False,
-        keep_interim: bool = True,
-        verbose: bool = True,
-    ) -> None:
-        self._aid = aid
-        self._workspace = workspace
-        self._stage = stage
-        self._name = name
-        self._logger = logger
-        self._force = force
-        self._keep_interim = keep_interim
-        self._verbose = verbose
-
-    @property
-    def aid(self) -> str:
-        return self._aid
-
-    @property
-    def workspace(self) -> str:
-        return self._workspace
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def stage(self) -> str:
-        return self._stage
-
-    @property
-    def logger(self) -> logging:
-        return self._logger
-
-    @property
-    def force(self) -> str:
-        return self._force
-
-    @property
-    def keep_interim(self) -> str:
-        return self._keep_interim
-
-    @property
-    def verbose(self) -> str:
-        return self._verbose
-
-
 # ------------------------------------------------------------------------------------------------------------------------ #
 class PipelineBuilder(ABC):
     """Abstract pipeline builder. Defines interface."""
 
-    def __init__(self, name: str, stage: str, force: bool = False, keep_interim: bool = True, verbose: bool = True) -> None:
-        self._name = name
-        self._stage = stage
-        self._force = force
-        self._keep_interim = keep_interim
-        self._verbose = verbose
+    def __init__(self) -> None:
+        self._name = None
+        self._stage = None
+        self._force = None
+        self._keep_interim = None
+        self._verbose = None
         self._command = None
 
         self._workspace = WorkspaceConfig().get_workspace()
 
         self._pipeline = None
         self._tasks = []
+        self._task_seq = 0
         self._printer = Printer()
 
     @property
     def pipeline(self) -> None:
         return self._pipeline
+
+    def set_name(self, name: str) -> None:
+        self._name = name
+        return self
+
+    def set_stage(self, stage: str) -> None:
+        self._stage = stage
+        return self
+
+    def set_force(self, force: bool) -> None:
+        self._force = force
+        return self
+
+    def set_keep_interim(self, keep_interim: bool) -> None:
+        self._keep_interim = keep_interim
+        return self
+
+    def set_verbose(self, verbose: bool) -> None:
+        self._verbose = verbose
+        return self
 
     def build_command(self) -> PipelineCommand:
         self._command = PipelineCommand(
@@ -225,15 +245,15 @@ class PipelineBuilder(ABC):
 
     def build_log(self) -> None:
         factory = LoggerFactory()
-        self._logger = factor.get_logger(
-            workspace=self._workspace, classname=self._pipeline.__class__.__name__, name=self._name, verbose=self._verbose
+        self._logger = factory.get_logger(
+            workspace=self._workspace, stage=self._stage, name=self._name, verbose=self._verbose
         )
 
     @abstractmethod
     def create(self) -> None:
         pass
 
-    def add_task(self, task: Task) -> None:
+    def add_task(self, task) -> None:
         task.task_seq = self._task_seq
         self._task_seq += 1
         self._tasks.append(task)
@@ -241,7 +261,7 @@ class PipelineBuilder(ABC):
     def build(self) -> Pipeline:
         self.build_log()
         self.build_command()
-        self.pipeline = DataPipeline(command=self._command, tasks=self._tasks)
+        self._pipeline = DataPipeline(command=self._command, tasks=self._tasks)
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -252,5 +272,5 @@ class DataPipelineBuilder(PipelineBuilder):
         super(DataPipelineBuilder, self).__init__()
 
     def create(self) -> None:
-        self._pipeline = DataPipeline()
+        self._pipeline = None
         self._tasks = []

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Saturday, January 22nd 2022, 11:45:02 pm                                                                      #
+# Modified : Sunday, January 23rd 2022, 5:01:44 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class Config(ABC):
     """Abstract base class for Config classes."""
 
-    def __init__(self) -> None:
+    def __init__(self, config_filepath: str = None) -> None:
         self._printer = Printer()
 
     @property
@@ -64,13 +64,16 @@ class WorkspaceConfig(Config):
 
     filepath = "config\workspace.yaml"
 
-    def __init__(self) -> None:
-        super(WorkspaceConfig, self).__init__()
-        self._config_filepath = WorkspaceConfig.filepath
+    def __init__(self, config_filepath: str = None) -> None:
+        super(WorkspaceConfig, self).__init__(config_filepath)
+        if config_filepath:
+            self._config_filepath = config_filepath
+        else:
+            self._config_filepath = WorkspaceConfig.filepath
 
     @property
     def config_filepath(self) -> str:
-        return WorkspaceConfig.filepath
+        return self._config_filepath
 
     def get_workspace(self) -> str:
         config = self.load_config()
@@ -97,13 +100,33 @@ class CriteoConfig(Config):
 
     filepath = "config\criteo.yaml"
 
-    def __init__(self) -> None:
+    def __init__(self, config_filepath: str = None) -> None:
         super(CriteoConfig, self).__init__()
-        self._config_filepath = CriteoConfig.filepath
+        if config_filepath:
+            self._config_filepath = config_filepath
+        else:
+            self._config_filepath = CriteoConfig.filepath
+        self._config = self.get_config()
 
     @property
     def config_filepath(self) -> str:
-        return CriteoConfig.filepath
+        return self._config_filepath
+
+    @property
+    def source(self) -> str:
+        return self._config["source"]
+
+    @property
+    def destination(self) -> str:
+        return self._config["destination"]
+
+    @property
+    def filepath_extract(self) -> str:
+        return self._config["filepath_extract"]
+
+    @property
+    def filepath_raw(self) -> str:
+        return self._config["filepath_raw"]
 
     def get_config(self) -> dict:
         return self.load_config()

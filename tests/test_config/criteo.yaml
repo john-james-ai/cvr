@@ -1,8 +1,7 @@
 ---
 name : Criteo Sponsored Search Conversion Log Dataset
-name : Criteo Sponsored Search Conversion Log Dataset
-download_source : http://go.criteo.net/criteo-research-search-conversion.tar.gz
-filepath_download_destination: tests/test_data/criteo/external/criteo.tar.gz
+source : http://go.criteo.net/criteo-research-search-conversion.tar.gz
+destination: tests/test_data/criteo/external/criteo.tar.gz
 filepath_extract: Criteo_Conversion_Search/CriteoSearchData
 filepath_raw: tests/test_data/criteo/raw/criteo.csv
 workspace: root

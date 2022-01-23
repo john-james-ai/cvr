@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Saturday, January 22nd 2022, 11:34:52 pm                                                                      #
+# Modified : Sunday, January 23rd 2022, 5:31:19 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -27,6 +27,7 @@ from typing import Union
 
 from cvr.data.datasets import DatasetBuilder
 from cvr.data.datasets import Dataset
+from cvr.core.pipeline import PipelineCommand
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 STATUS_CODES = {
@@ -68,7 +69,7 @@ class Task(ABC):
     def task_seq(self) -> int:
         return self._task_seq
 
-    @setter.task_seq
+    @task_seq.setter
     def task_seq(self, task_seq) -> None:
         self._task_seq = task_seq
 
@@ -126,7 +127,7 @@ class Task(ABC):
         """Status to report when task not executed because output data already exists."""
         self._status_code = "215"
 
-    def build_dataset(self, command: PipelineCommand, data: pd.DataFrame) -> Dataset:
+    def _build_dataset(self, command: PipelineCommand, data: pd.DataFrame) -> Dataset:
         dataset_name = command.name + "_" + self.__class__.__name__
         self._dataset_builder.create()
         self._dataset_builder.set_data(data)
@@ -141,7 +142,5 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def _run(
-        self, logger: logging, data: Union[str, pd.DataFrame, dict] = None, force=False
-    ) -> Union[str, pd.DataFrame, dict]:
+    def _run(command: PipelineCommand, data: Dataset = None) -> Dataset:
         pass

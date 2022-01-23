@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Friday, January 21st 2022, 1:42:03 pm                                                                         #
+# Modified : Sunday, January 23rd 2022, 5:32:28 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,7 +26,7 @@ from datetime import datetime
 import inspect
 import time
 
-from cvr.core.task import Download, ExtractRawData, Copy, ConvertDtypes, SetNA, SavePKLDataFrame
+from cvr.data.etl import Extract, TransformMissing, LoadDataset
 from cvr.core.pipeline import PipelineCommand, DataPipelineBuilder, DataPipeline
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.utils.config import CriteoConfig
@@ -38,31 +38,20 @@ logger = logging.getLogger(__name__)
 class ETLTests:
     def __init__(self):
         config_filepath = "tests\\test_config\criteo.yaml"
-        download_path = "tests\\test_data\criteo\external\criteo.tar.gz"
-        self._config = CriteoConfig(config_filepath)
+        self._config = CriteoConfig(config_filepath).get_config()
 
-        if os.path.exists(download_path):
+        if os.path.exists(self._config["destination"]):
             x = input("Delete existing download?")
             if "y" in x:
-                os.remove(download_path)
+                os.remove(self._config["destination"])
                 time.sleep(3)
 
     def test_tasks(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        self._download = Download(source=self._config.url, destination=self._config.destination)
-        self._decompress = ExtractRawData(source=self._config.destination, destination=self._config.filepath_decompressed)
-        self._copy = Copy(source=self._config.filepath_decompressed, destination=self._config.filepath_raw)
-        self._load = ConvertDtypes(source=self._config.filepath_raw)
-        self._setna = SetNA(value=[-1, "-1"])
-        self._stage = SavePKLDataFrame(destination=self._config.filepath_staged)
-
-        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-    def test_command(self):
-        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-        self._command = PipelineCommand(name="ETL Test", force=False, verbose=False)
+        self._extract = Extract(config=self._config)
+        self._transform = TransformMissing(value=[-1, "-1"])
+        self._load = LoadDataset()
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
@@ -70,13 +59,13 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self._builder = DataPipelineBuilder()
-        self._builder.create(self._command)
-        self._builder.add_task(self._download)
-        self._builder.add_task(self._decompress)
-        self._builder.add_task(self._copy)
+        self._builder.create()
+        self._builder.set_name(name="11th_street").set_stage("disenchanted").set_force(False).set_keep_interim(
+            True
+        ).set_verbose(True)
+        self._builder.add_task(self._extract)
+        self._builder.add_task(self._transform)
         self._builder.add_task(self._load)
-        self._builder.add_task(self._setna)
-        self._builder.add_task(self._stage)
         self._builder.build()
         self._pipeline = self._builder.pipeline
 
@@ -105,10 +94,9 @@ if __name__ == "__main__":
     logger.info(" Started ETL Pipeline Tests ")
     t = ETLTests()
     t.test_tasks()
-    t.test_command()
     t.test_builder()
     t.test_pipeline()
-    # t.test_summary()
+    t.test_summary()
     logger.info(" Completed ETL Pipeline Tests ")
 
 #%%
