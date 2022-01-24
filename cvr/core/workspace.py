@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 4:42:38 am                                                                         #
-# Modified : Monday, January 24th 2022, 12:28:41 am                                                                        #
+# Modified : Monday, January 24th 2022, 6:10:19 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -161,9 +161,9 @@ class AssetManager(ABC):
             if len(filepath) == 0:
                 return None
             elif isinstance(filepath, str):
-                return filepath
+                return filepath.lower()
             else:
-                return filepath[0]
+                return filepath[0].lower()
 
     def _set_filepath(self, asset: Asset) -> str:
         filename = self._workspace.name + "_" + asset.__class__.__name__ + "_" + asset.stage + "_" + asset.name + ".pkl"

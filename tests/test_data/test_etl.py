@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Sunday, January 23rd 2022, 7:42:23 pm                                                                         #
+# Modified : Monday, January 24th 2022, 8:00:40 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 class ETLTests:
     def __init__(self):
         config_filepath = "tests\\test_config\criteo.yaml"
-        self._config = CriteoConfig().get_config()
+        self._config = CriteoConfig()
 
-        if os.path.exists(self._config["destination"]):
+        if os.path.exists(self._config.destination):
             x = input("Delete existing download?")
             if "y" in x:
-                os.remove(self._config["destination"])
+                os.remove(self._config.destination)
                 time.sleep(3)
 
     def test_tasks(self):

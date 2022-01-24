@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Monday, January 24th 2022, 1:25:29 am                                                                         #
+# Modified : Monday, January 24th 2022, 11:51:29 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -57,7 +57,6 @@ class Extract(Task):
         super(Extract, self).__init__()
         self._config = config
         self._chunk_size = chunk_size
-        self._logger = None
 
         self._chunk_metrics = OrderedDict()
 
@@ -69,28 +68,25 @@ class Extract(Task):
         "Times and download rates for each requests chunk of data."
         return self._chunk_metrics
 
-    def _run(self, command: PipelineCommand, data: Dataset = None) -> Dataset:
-        """Downloads the data if it doesn't already exist or if command.force is True."""
-
-        # Unpack command logger
-        self._logger = command.logger
+    def _run(self, data: Dataset = None) -> Dataset:
+        """Downloads the data if it doesn't already exist or if self._command.force is True."""
 
         # Format filepaths.
         self._source = self._config.source
         self._filepath_download = self._config.destination
-        self._filepath_raw = os.path.join("data", command.workspace, self._config.filepath_raw)
+        self._filepath_raw = os.path.join("data", self._command.workspace, self._config.filepath_raw)
 
         # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
 
         # Download the data unless it already exists or force is True
-        if not os.path.exists(self._filepath_download) or command.force is True:
-            self._download(source=self._source, destination=self._filepath_download, command=command)
+        if not os.path.exists(self._filepath_download) or self._command.force is True:
+            self._download(source=self._source, destination=self._filepath_download)
 
         # -------------------------------------- DECOMPRESS STEP -------------------------------------- #
 
         # Extract to raw data in the workspace, unless it already exists or force is True
-        if not os.path.exists(self._filepath_raw) or command.force is True:
-            self._decompress(source=self._filepath_download, destination=self._filepath_raw, command=command)
+        if not os.path.exists(self._filepath_raw) or self._command.force is True:
+            self._decompress(source=self._filepath_download, destination=self._filepath_raw)
 
         # ----------------------------------------- LOAD STEP ----------------------------------------- #
 
@@ -99,13 +95,13 @@ class Extract(Task):
         )
 
         # Create Dataset object
-        dataset = self._build_dataset(command, df)
+        dataset = self._build_dataset(data=df)
 
         # Update status code
         self._status_code = "200"
         return dataset
 
-    def _download(self, source: str, destination: str, command: PipelineCommand) -> dict:
+    def _download(self, source: str, destination: str) -> dict:
         """Downloads the data from the site"""
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -116,16 +112,16 @@ class Extract(Task):
         with requests.get(source, stream=True) as response:
             self._status_code = response.status_code
             if response.status_code == 200:
-                self._process_response(destination=destination, response=response, command=command)
+                self._process_response(destination=destination, response=response)
                 self._logger.info(
-                    "\t{} Mb downloaded in {} {} Mb chunks. Download complete!".format(
+                    "\n\tDownload complete! {} Mb downloaded in {} {} Mb chunks.".format(
                         str(self._summary["Downloaded (Mb)"]), str(self._summary["Chunks Downloaded"]), str(self._chunk_size)
                     )
                 )
             else:
                 raise ConnectionError(response)
 
-    def _process_response(self, destination: str, response: requests.Response, command: PipelineCommand) -> dict:
+    def _process_response(self, destination: str, response: requests.Response) -> dict:
         """Processes an HTTP Response
 
         Args:
@@ -133,31 +129,34 @@ class Extract(Task):
             response (requests.Response): HTTP Response object.
         """
 
-        self._setup_process_response(response, command)
+        self._setup_process_response(response)
 
         # Set chunk_size, defaults to 10Mb
         chunk_size = 1024 * 1024 * self._chunk_size
 
         # Setup data for progress bar
-        size_in_bytes = int(response.headers.get("content-length", 0))
-        progress_bar = tqdm(total=size_in_bytes, unit="iB", unit_scale=True)
+        if self._command.progress and self._command.verbose:
+            size_in_bytes = int(response.headers.get("content-length", 0))
+            progress_bar = tqdm(total=size_in_bytes, unit="iB", unit_scale=True)
 
         with open(destination, "wb") as fd:
             i = 0
             downloaded = 0
             for chunk in response.iter_content(chunk_size=chunk_size):
-                progress_bar.update(len(chunk))
+                if self._command.progress and self._command.verbose:
+                    progress_bar.update(len(chunk))
 
                 # Download the chunk and capture transmission metrics.
                 downloaded = self._download_chunk(chunk, fd, response, i, downloaded)
 
                 i += 1
 
-        progress_bar.close()
+        if self._command.progress and self._command.verbose:
+            progress_bar.close()
 
         self._teardown_process_response(destination=destination, i=i, downloaded=downloaded)
 
-    def _setup_process_response(self, response: requests.Response, command: PipelineCommand) -> None:
+    def _setup_process_response(self, response: requests.Response) -> None:
         """Grab some metadata from the content header.
 
         Args:
@@ -205,13 +204,14 @@ class Extract(Task):
         except ZeroDivisionError as e:
             average_mbps = 0
 
-        # Every 10th chunk, we'll report progress. Disabled. Using progress bar.
-        # if (chunk_number) % 10 == 0:
-        #     self._logger.info(
-        #         "\tChunk #{}: {} percent downloaded at {} Mbps".format(
-        #             str(chunk_number), str(round(pct_downloaded, 2)), str(round(average_mbps, 2))
-        #         )
-        #     )
+        # If progress is disabled and verbose is True, provide progress every 'check_download' iterations
+        if not self._command.progress and self._command.verbose:
+            if (chunk_number) % self._command.check_download == 0:
+                self._logger.info(
+                    "\tChunk #{}: {} percent downloaded at {} Mbps".format(
+                        str(chunk_number), str(round(pct_downloaded, 2)), str(round(average_mbps, 2))
+                    )
+                )
 
         self._chunk_metrics[chunk_number] = {
             "Downloaded": downloaded,
@@ -234,10 +234,9 @@ class Extract(Task):
         self._summary["Chunk Size (Mb)"] = self._chunk_size
         self._summary["Chunks Downloaded"] = i + 1
         self._summary["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
-        self._summary["File Size (Mb)"] = round(Mb, 3)
         self._summary["Mbps"] = round(Mb / duration.total_seconds(), 3)
 
-    def _decompress(self, source: str, destination: str, command: PipelineCommand) -> None:
+    def _decompress(self, source: str, destination: str) -> None:
 
         self._logger.info("\tDecompression initiated.")
         data = tarfile.open(source)
@@ -248,12 +247,12 @@ class Extract(Task):
             self._summary["Size Extracted (Mb)"] = round(int(os.path.getsize(tempfilepath)) / (1024 * 1024), 2)
 
             # If sampling, copy a sample from the temp file, otherwise copy the tempfile in its entirety
-            if command.sample_size > 1:
+            if self._command.sample_size > 1:
                 self._decompress_sample(
                     source=tempfilepath,
                     destination=destination,
-                    nrows=command.sample_size,
-                    random_state=command.random_state,
+                    nrows=self._command.sample_size,
+                    random_state=self._command.random_state,
                 )
             else:
                 shutil.copyfile(tempfilepath, destination)
@@ -264,7 +263,7 @@ class Extract(Task):
         self._logger.info("\tSampling dataset initiated.")
         sample_file(source=source, destination=destination, nrows=nrows, random_state=random_state)
         self._summary["Sampled Dataset Observations"] = nrows
-        self._summary["Sampled Dataset Size"] = round(int(os.path.getsize(destination)) / (1024 * 1024), 2)
+        self._summary["Sampled Dataset Size (Mb)"] = round(int(os.path.getsize(destination)) / (1024 * 1024), 2)
         self._logger.info("\tSampling Complete! {} Rows Sampled.".format(str(nrows)))
 
     def _process_non_response(self, response: requests.Response) -> dict:
@@ -278,6 +277,7 @@ class Extract(Task):
 
     @property
     def summary(self) -> dict:
+        self._print_summary_dict(self._summary)
         return self._summary
 
 
@@ -298,48 +298,50 @@ class TransformETL(Task):
         self._before = None
         self._after = None
 
-    def _run(self, command: PipelineCommand, data: Dataset) -> Dataset:
+    def _run(self, data: Dataset = None) -> Dataset:
 
         data.set_task_data(self)
 
         # Check Missing before the operation
-        self._before = self._df.isna().sum().sum()
+        self._before = self._df.isna().sum()
 
         # Transform the missing values
         self._df = self._df.replace(self._value, np.nan)
         self._status_code = "200"
 
         # Check missing after
-        self._after = self._df.isna().sum().sum()
+        self._after = self._df.isna().sum()
 
         # Create Dataset object
-        dataset = self._build_dataset(command, self._df)
+        dataset = self._build_dataset(data=self._df)
         return dataset
 
         # Summarize
-        self._summary = self._response_normal()
+        self._summary = missing
         return dataset
-
-    def _response_normal(self) -> dict:
-        rows, columns = self._data.shape
-        cells = rows * columns
-        self._summary["Rows"] = rows
-        self._summary["Columns"] = columns
-        self._summary["Cells"] = cells
-        self._summary["Missing Before"] = self._before
-        self._summary["Missing % Before"] = round(self._before / cells * 100, 2)
-        self._summary["Missing After"] = self._after
-        self._summary["Missing % After"] = round(self._after / cells * 100, 2)
-        self._summary["% Change"] = round(
-            (self._summary["Missing After"] - self._summary["Missing Before"]) / self._summary["Missing Before"] * 100,
-            2,
-        )
-
-        self._status_code = "200"
 
     @property
     def summary(self) -> dict:
-        return self._summary
+        """Prepares missing values by column and presents totals."""
+        rows, columns = self._df.shape
+        cells = rows * columns
+        # Prepare Missing Values Detail
+        missing = self._before.to_frame(name="Before").join(self._after.to_frame(name="After"))
+
+        subtitle = "Missing Values Replacement: Dataset {} / {} Stage".format(self._command.name, self._command.stage)
+        self._print_summary_df(missing, subtitle)
+
+        # Prepare missing values summary
+        before = self._before.sum()
+        after = self._after.sum()
+        d = {
+            "Missing": {"Before": before, "After": after},
+            "Total": {"Before": cells, "After": cells},
+            "Pct": {"Before": round(before / cells * 100, 2), "After": round(after / cells * 100, 2)},
+        }
+        df = pd.DataFrame.from_dict(d, orient="columns")
+        self._print_summary_df(df, " ")
+        return missing
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -349,14 +351,14 @@ class LoadDataset(Task):
     def __init__(self) -> None:
         super(LoadDataset, self).__init__()
 
-    def _run(self, command: PipelineCommand, data: Dataset) -> Dataset:
+    def _run(self, data: Dataset = None) -> Dataset:
         """Add the dataset to the current workspace
 
         Args:
             command (PipelineCommand): Parameters for the Pipeline
             data (Dataset): Dataset created by the previous step.
         """
-        self._workspace = Workspace(command.workspace)
+        self._workspace = Workspace(self._command.workspace)
         filepath = self._workspace.add_dataset(data)
         # Update status code
         self._status_code = "200"
@@ -365,10 +367,11 @@ class LoadDataset(Task):
         self._summary["Workspace"] = data.workspace
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
-        self._summary["name"] = data.name
         self._summary["filepath"] = filepath
         return data
 
     @property
     def summary(self) -> dict:
+        """Prints a summary of the task result."""
+        self._print_summary_dict(self._summary)
         return self._summary

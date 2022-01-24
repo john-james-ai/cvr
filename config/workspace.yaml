@@ -1,6 +1,6 @@
-current: vesuvio
+current: full_month
 random_state: 55
 sample_sizes:
-  greco: 1
-  trieste: 100000
+  full_monte: 1
+  greco: 100000
   vesuvio: 10000

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Sunday, January 23rd 2022, 7:03:33 pm                                                                         #
+# Modified : Monday, January 24th 2022, 11:18:48 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -46,6 +46,8 @@ class PipelineCommand:
         force: bool = False,
         keep_interim: bool = True,
         verbose: bool = True,
+        progress: bool = False,
+        check_download: int = 20,
     ) -> None:
         self._aid = aid
         self._workspace = workspace
@@ -57,6 +59,8 @@ class PipelineCommand:
         self._force = force
         self._keep_interim = keep_interim
         self._verbose = verbose
+        self._progress = progress
+        self._check_download = check_download
 
     @property
     def aid(self) -> str:
@@ -98,6 +102,14 @@ class PipelineCommand:
     def verbose(self) -> str:
         return self._verbose
 
+    @property
+    def progress(self) -> str:
+        return self._progress
+
+    @property
+    def check_download(self) -> str:
+        return self._check_download
+
 
 # ======================================================================================================================== #
 class Pipeline(Asset):
@@ -111,8 +123,7 @@ class Pipeline(Asset):
 
         self._data = None
 
-        self._summary = OrderedDict()
-        self._task_summaries = OrderedDict()
+        self._result = pd.DataFrame()
 
         self._printer = Printer()
         self._start = None
@@ -144,21 +155,25 @@ class Pipeline(Asset):
         return self._command.stage
 
     @property
-    def force(self) -> logging:
+    def force(self) -> bool:
         return self._command.force
 
     @property
-    def keep_interim(self) -> logging:
+    def keep_interim(self) -> bool:
         return self._command.keep_interim
 
     @property
-    def verbose(self) -> logging:
+    def verbose(self) -> bool:
         return self._command.verbose
+
+    @property
+    def check_download(self) -> bool:
+        return self._command.check_download
 
     @property
     def summary(self) -> None:
         self._printer.print_title("DataPipeline {} Summary".format(self._command.name))
-        self._printer.print_dictionary(self._summary)
+        self._printer.print_dataframe(self._result)
 
     def run(self) -> None:
         self._setup()
@@ -173,40 +188,28 @@ class Pipeline(Asset):
     def _teardown(self) -> None:
         self._end = datetime.now()
         self._duration = self._end - self._start
-        self._logger.info("Completed {}. Duration {}".format(self._name, self._duration))
-        self._summary["Start"] = self._start
-        self._summary["End"] = self._end
-        self._summary["Duration"] = self._duration
-
-    @abstractmethod
-    def _run(self, command: PipelineCommand) -> None:
-        pass
-
-
-# ------------------------------------------------------------------------------------------------------------------------ #
-class DataPipeline(Pipeline):
-    def __init__(self, command: PipelineCommand, tasks: list) -> None:
-        super(DataPipeline, self).__init__(command=command, tasks=tasks)
+        self._logger.info("Completed {}".format(self._name))
 
     def _run(self, command: PipelineCommand) -> None:
         for task in self._tasks:
             # Run the task
             self._data = task.run(command=command, data=self._data)
 
-            # Update the pipeline summary with the task status
-            self._summary.update({task.__class__.__name__: task.status})
+            # Capture result
+            d = OrderedDict()
+            d["Task"] = task.__class__.__name__
+            d["Start"] = task.start
+            d["End"] = task.end
+            d["Minutes"] = round(task.duration.total_seconds() / 60.0, 2)
+            d["Status"] = task.status
+            df = pd.DataFrame(d, index=[task.task_seq])
+            self._result = pd.concat([self._result, df], axis=0)
 
-            # Add the task summary to the list of task summaries for reporting and debugging.
-            self._task_summaries[task.name] = task.summary
 
-            # Print the task summary if verbose
-            if self._command.verbose:
-                self._printer.print_title(
-                    "DataPipeline {} Summary".format(self._command.name), "{} Step".format(task.__class__.__name__)
-                )
-                self._printer.print_dictionary(task.summary)
-
-            self._logger.info("{} Complete. Status: {}".format(task.__class__.__name__, task.status))
+# ------------------------------------------------------------------------------------------------------------------------ #
+class DataPipeline(Pipeline):
+    def __init__(self, command: PipelineCommand, tasks: list) -> None:
+        super(DataPipeline, self).__init__(command=command, tasks=tasks)
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -216,10 +219,12 @@ class PipelineBuilder(ABC):
     def __init__(self) -> None:
         self._name = None
         self._stage = None
-        self._force = None
+        self._force = False
         self._keep_interim = None
-        self._verbose = None
+        self._verbose = True
         self._command = None
+        self._progress = False
+        self._check_download = 20
 
         self._config = WorkspaceConfig()
         self._workspace = self._config.get_workspace()
@@ -243,16 +248,20 @@ class PipelineBuilder(ABC):
         self._stage = stage
         return self
 
-    def set_force(self, force: bool) -> None:
+    def set_force(self, force: bool = False) -> None:
         self._force = force
         return self
 
-    def set_keep_interim(self, keep_interim: bool) -> None:
-        self._keep_interim = keep_interim
+    def set_verbose(self, verbose: bool = True) -> None:
+        self._verbose = verbose
         return self
 
-    def set_verbose(self, verbose: bool) -> None:
-        self._verbose = verbose
+    def set_progress(self, progress: bool = False) -> None:
+        self._progress = progress
+        return self
+
+    def set_check_download(self, check_download: int = 20) -> None:
+        self._check_download = check_download
         return self
 
     def build_command(self) -> PipelineCommand:
@@ -267,6 +276,8 @@ class PipelineBuilder(ABC):
             force=self._force,
             keep_interim=self._keep_interim,
             verbose=self._verbose,
+            progress=self._progress,
+            check_download=self._check_download,
         )
 
     def build_log(self) -> None:

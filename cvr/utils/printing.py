@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, December 24th 2021, 12:27:22 pm                                                                       #
-# Modified : Saturday, January 1st 2022, 1:25:47 am                                                                        #
+# Modified : Monday, January 24th 2022, 10:03:29 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -65,10 +65,7 @@ class Printer:
         rhs_lens = [len(str(v)) for v in content.values()]
 
         # If all lengths are within budget return self._anchor_pos
-        if (
-            max(lhs_lens) <= anchor["lhs_budget"]
-            and max(rhs_lens) <= anchor["rhs_budget"]
-        ):
+        if max(lhs_lens) <= anchor["lhs_budget"] and max(rhs_lens) <= anchor["rhs_budget"]:
             return anchor
 
         # Otherwise adjust anchor by 1/2 (avg_rhs - avg_lhs)
@@ -95,20 +92,9 @@ class Printer:
         print(title_separator.center(self._line_length))
 
     def _print_line(self, anchor, k, v):
-        v = (
-            format(v, ",")
-            if isinstance(v, (int, float, numbers.Integral, numbers.Real))
-            else str(v)
-        )
+        v = format(v, ",") if isinstance(v, (int, float, numbers.Integral, numbers.Real)) else str(v)
         lhs_pad = " " * int(anchor["pos"] - anchor["lhs_pad"] - len(k))
-        line = (
-            lhs_pad
-            + k
-            + " " * anchor["lhs_pad"]
-            + anchor["style"]
-            + " " * anchor["rhs_pad"]
-            + v
-        )
+        line = lhs_pad + k + " " * anchor["lhs_pad"] + anchor["style"] + " " * anchor["rhs_pad"] + v
         print(line)
 
     def print_blank_line(self):
@@ -135,4 +121,5 @@ class Printer:
         """
         if title:
             self.print_title(title)
-        print(tabulate(content, headers=content.columns, tablefmt="simple"))
+        # print(tabulate(content, headers=content.columns, tablefmt="simple"))
+        print(content)

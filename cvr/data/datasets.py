@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Monday, January 24th 2022, 1:24:34 am                                                                         #
+# Modified : Monday, January 24th 2022, 11:03:34 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -96,7 +96,7 @@ class AbstractDataset(Asset):
     def info(self) -> dict:
         """Prints column i.e. structural metadata."""
         self._printer.print_title("Dataset {}".format(self.name))
-        self._df.info()
+        self._df.info(show_counts=True)
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                               PROPERTIES                                                            #
