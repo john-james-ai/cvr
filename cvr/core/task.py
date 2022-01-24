@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Sunday, January 23rd 2022, 5:31:19 am                                                                         #
+# Modified : Monday, January 24th 2022, 1:03:25 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -97,7 +97,6 @@ class Task(ABC):
     def _setup(self, logger: logging) -> None:
         self._start = datetime.now()
         self._status_code = "102"
-        logger.info("Started Task: {}".format(self._name))
 
     def _teardown(self, logger: logging) -> None:
         self._end = datetime.now()
@@ -108,7 +107,6 @@ class Task(ABC):
         self._summary["Status"] = self.status
         self._summary["Status Date"] = date.today()
         self._summary["Status Time"] = self._end.strftime("%H:%M:%S")
-        logger.info("Ended Task: {}. Status: {}".format(self._name, self.status))
 
     def run(self, command: PipelineCommand, data: Dataset = None) -> Dataset:
         """Runs the task through delegation to a private member on the subclass
@@ -128,7 +126,7 @@ class Task(ABC):
         self._status_code = "215"
 
     def _build_dataset(self, command: PipelineCommand, data: pd.DataFrame) -> Dataset:
-        dataset_name = command.name + "_" + self.__class__.__name__
+        dataset_name = command.name
         self._dataset_builder.create()
         self._dataset_builder.set_data(data)
         self._dataset_builder.set_name(dataset_name)

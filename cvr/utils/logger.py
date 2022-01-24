@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 7:48:42 pm                                                                       #
-# Modified : Sunday, January 23rd 2022, 5:30:33 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 11:43:36 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -41,18 +41,19 @@ class LoggerFactory:
         logger = logging.getLogger(logname)
         logger.setLevel(logging.DEBUG)
 
-        # Set formatter
-        format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        # Set formatters
+        file_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        stream_format = logging.Formatter("%(message)s")
 
         # Add file handler
         fh = logging.handlers.TimedRotatingFileHandler(logfilepath, when="d", encoding=None, delay=False)
-        fh.setFormatter(format)
+        fh.setFormatter(file_format)
         logger.addHandler(fh)
 
         # Add console handler if verbose.
         if verbose:
             ch = logging.StreamHandler()
-            ch.setFormatter(format)
+            ch.setFormatter(stream_format)
             logger.addHandler(ch)
 
         return logger

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Sunday, January 23rd 2022, 5:52:27 am                                                                         #
+# Modified : Monday, January 24th 2022, 1:24:34 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -119,32 +119,32 @@ class AbstractDataset(Asset):
     @property
     def summary(self) -> None:
         """Prints summary statistics."""
-        subtitle = "Summary"
-        self._printer.print_title(self.description, subtitle)
+        subtitle = "Dataset Summary"
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dictionary(self._profile.summary)
         return self._profile.summary
 
     @property
-    def data_types(self) -> None:
+    def datatypes(self) -> None:
         """Prints descriptive statistics for all numeric columns"""
         subtitle = "Data Type Analysis"
-        self._printer.print_title(self.description, subtitle)
-        self._printer.print_dataframe(self._profile.datatypes)
+        self._printer.print_title(subtitle, self.description)
+        self._printer.print_dictionary(self._profile.datatypes)
         return self._profile.datatypes
 
     @property
-    def numeric_statistics(self) -> None:
+    def numerics(self) -> None:
         """Prints descriptive statistics for all numeric columns"""
         subtitle = "Descriptive Statistics (Quantitative Variables)"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dataframe(self._profile.numerics)
         return self._profile.numerics
 
     @property
-    def categorical_statistics(self) -> None:
+    def categoricals(self) -> None:
         """Prints descriptive statistics for all categorical columns"""
         subtitle = "Descriptive Statistics (Qualitative Variables)"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dataframe(self._profile.categoricals)
         return self._profile.categoricals
 
@@ -152,7 +152,7 @@ class AbstractDataset(Asset):
     def missing_summary(self) -> dict:
         """Prints missing data statistics"""
         subtitle = "Missing Data Analysis"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dictionary(self._profile.missing_summary)
         return self._profile.missing_summary
 
@@ -160,7 +160,7 @@ class AbstractDataset(Asset):
     def missing(self) -> dict:
         """Prints missing data statistics"""
         subtitle = "Missing Data Analysis"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dataframe(self._profile.missing)
         return self._profile.missing
 
@@ -168,7 +168,7 @@ class AbstractDataset(Asset):
     def cardinality(self) -> None:
         """Prints / returns cardinality of the dataset."""
         subtitle = "Cardinality"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dataframe(self._profile.cardinality)
         return self._profile.cardinality
 
@@ -176,7 +176,7 @@ class AbstractDataset(Asset):
     def metrics(self) -> None:
         """Prints conversion metrics."""
         subtitle = "Metrics"
-        self._printer.print_title(self.description, subtitle)
+        self._printer.print_title(subtitle, self.description)
         self._printer.print_dictionary(self._profile.metrics)
         return self._profile.metrics
 

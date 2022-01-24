@@ -1,9 +1,10 @@
 ---
 name : Criteo Sponsored Search Conversion Log Dataset
 source : http://go.criteo.net/criteo-research-search-conversion.tar.gz
-destination: data/criteo/external/criteo.tar.gz
+destination: data\external\criteo.tar.gz
 filepath_extract: Criteo_Conversion_Search/CriteoSearchData
-filepath_raw: data/criteo/raw/criteo.csv
+# filepath_raw must be joined with the data directory for the current workspace
+filepath_raw: raw\criteo.csv
 workspace: root
 sep : \t
 missing: -1

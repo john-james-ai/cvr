@@ -11,16 +11,15 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 2:03:27 am                                                                        #
-# Modified : Saturday, January 22nd 2022, 11:48:50 pm                                                                      #
+# Modified : Sunday, January 23rd 2022, 8:29:28 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
 # Copyright: (c) 2021 Bryant St. Labs                                                                                      #
 # ======================================================================================================================== #
 #%%
+import os
 import pandas as pd
-import numpy as np
-
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 def sample_csv(source: str, destination: str, frac: float = 0.01, random_state: int = None) -> None:
@@ -80,3 +79,21 @@ def sample_df(data: pd.DataFrame, frac: float, stratify: str = None, random_stat
         df = data.sample(frac=frac, random_state=random_state)
 
     return df
+
+
+# ------------------------------------------------------------------------------------------------------------------------ #
+def sample_file(source: str, destination: str, nrows: int, random_state: int = None) -> pd.DataFrame:
+    """Sample from file
+
+    Args:
+        source (str): Path to input file
+        destination (str): Path to output file
+        frac (float): The fraction of observations to draw
+        random_state (int): Pseudo random generator seed
+
+    Returns:
+        DataFrame containing the requested sample.
+    """
+    df = pd.read_csv(source, nrows=nrows, low_memory=False, index_col=None, sep="\t", header=None, encoding="utf-8")
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    df.to_csv(destination, sep="\t", header=False, index=False)

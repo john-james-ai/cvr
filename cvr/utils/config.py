@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Sunday, January 23rd 2022, 5:01:44 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 4:52:38 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -83,6 +83,15 @@ class WorkspaceConfig(Config):
         config = self.load_config()
         config["current"] = workspace
         self.save_config(config)
+
+    def get_sample_size(self) -> float:
+        config = self.load_config()
+        current = config["current"]
+        return float(config["sample_sizes"][current])
+
+    def get_random_state(self) -> float:
+        config = self.load_config()
+        return int(config["random_state"])
 
     def print(self) -> None:
         config = self.load_config()

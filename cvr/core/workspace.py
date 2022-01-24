@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 4:42:38 am                                                                         #
-# Modified : Sunday, January 23rd 2022, 4:04:50 am                                                                         #
+# Modified : Monday, January 24th 2022, 12:28:41 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class Workspace:
     """Defines a workspace encapsulating datasets and the pipeline operations."""
 
-    def __init__(self, name: str, description: str = None, current: bool = True) -> None:
+    def __init__(self, name: str, description: str = None, current: bool = False) -> None:
         self._name = name
         self._description = description
         self._directory = os.path.join("workspaces", name)

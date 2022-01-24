@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Sunday, January 23rd 2022, 5:30:49 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 7:03:33 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -38,6 +38,8 @@ class PipelineCommand:
         self,
         aid: str,
         workspace: str,
+        sample_size: float,
+        random_state: int,
         stage: str,
         name: str,
         logger: logging,
@@ -47,6 +49,8 @@ class PipelineCommand:
     ) -> None:
         self._aid = aid
         self._workspace = workspace
+        self._sample_size = sample_size
+        self._random_state = random_state
         self._stage = stage
         self._name = name
         self._logger = logger
@@ -61,6 +65,14 @@ class PipelineCommand:
     @property
     def workspace(self) -> str:
         return self._workspace
+
+    @property
+    def sample_size(self) -> float:
+        return self._sample_size
+
+    @property
+    def random_state(self) -> int:
+        return self._random_state
 
     @property
     def name(self) -> str:
@@ -120,6 +132,14 @@ class Pipeline(Asset):
         return self._command.workspace
 
     @property
+    def sample_size(self) -> str:
+        return self._command.sample_size
+
+    @property
+    def random_state(self) -> str:
+        return self._command.random_state
+
+    @property
     def stage(self) -> str:
         return self._command.stage
 
@@ -144,6 +164,7 @@ class Pipeline(Asset):
         self._setup()
         self._run(command=self._command)
         self._teardown()
+        return self._data
 
     def _setup(self) -> None:
         self._start = datetime.now()
@@ -185,7 +206,7 @@ class DataPipeline(Pipeline):
                 )
                 self._printer.print_dictionary(task.summary)
 
-            logger.info("{} Complete. Status: {}".format(task.__class__.__name__, task.status))
+            self._logger.info("{} Complete. Status: {}".format(task.__class__.__name__, task.status))
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -200,7 +221,10 @@ class PipelineBuilder(ABC):
         self._verbose = None
         self._command = None
 
-        self._workspace = WorkspaceConfig().get_workspace()
+        self._config = WorkspaceConfig()
+        self._workspace = self._config.get_workspace()
+        self._sample_size = self._config.get_sample_size()
+        self._random_state = self._config.get_random_state()
 
         self._pipeline = None
         self._tasks = []
@@ -235,6 +259,8 @@ class PipelineBuilder(ABC):
         self._command = PipelineCommand(
             aid=self._workspace + "_" + self._pipeline.__class__.__name__ + "_" + self._stage + "_" + self._name,
             workspace=self._workspace,
+            sample_size=self._sample_size,
+            random_state=self._random_state,
             stage=self._stage,
             name=self._name,
             logger=self._logger,

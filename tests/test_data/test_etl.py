@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Sunday, January 23rd 2022, 5:32:28 am                                                                         #
+# Modified : Sunday, January 23rd 2022, 7:42:23 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,7 +26,7 @@ from datetime import datetime
 import inspect
 import time
 
-from cvr.data.etl import Extract, TransformMissing, LoadDataset
+from cvr.data.etl import Extract, TransformETL, LoadDataset
 from cvr.core.pipeline import PipelineCommand, DataPipelineBuilder, DataPipeline
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.utils.config import CriteoConfig
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class ETLTests:
     def __init__(self):
         config_filepath = "tests\\test_config\criteo.yaml"
-        self._config = CriteoConfig(config_filepath).get_config()
+        self._config = CriteoConfig().get_config()
 
         if os.path.exists(self._config["destination"]):
             x = input("Delete existing download?")
@@ -50,7 +50,7 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self._extract = Extract(config=self._config)
-        self._transform = TransformMissing(value=[-1, "-1"])
+        self._transform = TransformETL(value=[-1, "-1"])
         self._load = LoadDataset()
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
@@ -60,9 +60,9 @@ class ETLTests:
 
         self._builder = DataPipelineBuilder()
         self._builder.create()
-        self._builder.set_name(name="11th_street").set_stage("disenchanted").set_force(False).set_keep_interim(
+        self._builder.set_name(name="11th_street").set_stage("seed").set_force(False).set_keep_interim(True).set_verbose(
             True
-        ).set_verbose(True)
+        )
         self._builder.add_task(self._extract)
         self._builder.add_task(self._transform)
         self._builder.add_task(self._load)
@@ -74,18 +74,22 @@ class ETLTests:
     def test_pipeline(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        self._pipeline.run()
+        self.dataset = self._pipeline.run()
         self._pipeline.summary
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_summary(self):
+    def test_data(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        d = self._profiler.summary
-        assert d["rows"] == self._df.shape[0], logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-        assert d["columns"] == self._df.shape[1], logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-        assert d["size"] > 100, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        self.dataset.info()
+        self.dataset.numerics
+        self.dataset.categoricals
+        self.dataset.missing_summary
+        self.dataset.missing
+        self.dataset.cardinality
+        self.dataset.metrics
+        self.dataset.datatypes
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
@@ -96,7 +100,7 @@ if __name__ == "__main__":
     t.test_tasks()
     t.test_builder()
     t.test_pipeline()
-    t.test_summary()
+    t.test_data()
     logger.info(" Completed ETL Pipeline Tests ")
 
 #%%

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 1:33:06 pm                                                                         #
-# Modified : Sunday, January 23rd 2022, 12:56:23 am                                                                        #
+# Modified : Monday, January 24th 2022, 12:42:46 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -95,7 +95,7 @@ class DataProfiler:
         d["Missing Cells %"] = round(d["Missing Cells"] / (d["Rows"] * d["Columns"]) * 100, 2)
         d["Duplicate Rows"] = self._data.duplicated(keep="first").sum()
         d["Duplicate Rows %"] = round(d["Duplicate Rows"] / d["Rows"] * 100, 2)
-        d["Size (Mb)"] = self._data.memory_usage(deep=True).sum()
+        d["Size (Mb)"] = round(self._data.memory_usage(deep=True).sum() / (1024 * 1024), 2)
 
         self._profile["summary"] = d
 
@@ -152,5 +152,4 @@ class DataProfiler:
         self._profile["metrics"] = d
 
     def _compute_datatypes(self) -> pd.DataFrame():
-        self._profile["datatypes"] = self._data.dtypes.astype(str).value_counts().to_frame()
-        self._profile["datatypes"].columns = ["Count"]
+        self._profile["datatypes"] = self._data.dtypes.astype(str).value_counts().to_frame().to_dict()[0]

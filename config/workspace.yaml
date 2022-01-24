@@ -1,6 +1,6 @@
-current: Cafe_Trieste
-datastore_directory: datastore
-datastore_inventory: datastore\inventory.pkl
-pipelines_directory: pipelines
-pipelines_inventory: pipelines\inventory.pkl
-workspaces: null
+current: vesuvio
+random_state: 55
+sample_sizes:
+  greco: 1
+  trieste: 100000
+  vesuvio: 10000

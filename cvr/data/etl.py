@@ -4,33 +4,14 @@
 # Project  : Conversion Rate Prediction (CVR)                                                                              #
 # Version  : 0.1.0                                                                                                         #
 # File     : \etl.py                                                                                                       #
-# Language : Python 3.10.1                                                                                                 #
+# Language : Python 3.7.12                                                                                                 #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Author   : John James                                                                                                    #
 # Email    : john.james.ai.studio@gmail.com                                                                                #
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Sunday, January 23rd 2022, 5:05:31 am                                                                         #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Conversion Rate Prediction (CVR)                                                                              #
-# Version  : 0.1.0                                                                                                         #
-# File     : \etl.py                                                                                                       #
-# Language : Python 3.10.1                                                                                                 #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/cvr                                                                          #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified :                                                                                                               #
+# Modified : Monday, January 24th 2022, 1:25:29 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -48,8 +29,9 @@ import requests
 from typing import Union
 import tarfile
 import shutil
-import warnings
+from tqdm import tqdm
 import tempfile
+import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -59,11 +41,11 @@ from cvr.core.workspace import Workspace
 from cvr.utils.config import CriteoConfig
 from cvr.core.pipeline import PipelineCommand
 from cvr.data.datasets import Dataset
-
+from cvr.utils.sampling import sample_file
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 class Extract(Task):
-    """Extracts the data from its source and creates a Dataset object.
+    """Extracts the data from its source and creates araw Dataset object.
 
     Args:
         config (CriteoConfig): Configuration object with parameters needed download the source data.
@@ -79,8 +61,12 @@ class Extract(Task):
 
         self._chunk_metrics = OrderedDict()
 
+        self._filepath_download = None
+        self._filepath_raw = None
+
     @property
     def chunk_metrics(self) -> dict:
+        "Times and download rates for each requests chunk of data."
         return self._chunk_metrics
 
     def _run(self, command: PipelineCommand, data: Dataset = None) -> Dataset:
@@ -89,78 +75,107 @@ class Extract(Task):
         # Unpack command logger
         self._logger = command.logger
 
-        # Download the data and decompress if not already there. If force is True, download is mandatory
-        if not os.path.exists(self._config["destination"]) or command.force is True:
-            self._summary = self._download()
-            self._decompress()
+        # Format filepaths.
+        self._source = self._config.source
+        self._filepath_download = self._config.destination
+        self._filepath_raw = os.path.join("data", command.workspace, self._config.filepath_raw)
 
-        # Load raw data
+        # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
+
+        # Download the data unless it already exists or force is True
+        if not os.path.exists(self._filepath_download) or command.force is True:
+            self._download(source=self._source, destination=self._filepath_download, command=command)
+
+        # -------------------------------------- DECOMPRESS STEP -------------------------------------- #
+
+        # Extract to raw data in the workspace, unless it already exists or force is True
+        if not os.path.exists(self._filepath_raw) or command.force is True:
+            self._decompress(source=self._filepath_download, destination=self._filepath_raw, command=command)
+
+        # ----------------------------------------- LOAD STEP ----------------------------------------- #
+
         df = pd.read_csv(
-            self._config["filepath_raw"], sep="\t", header=None, names=criteo_columns, dtype=criteo_dtypes, low_memory=False
+            self._filepath_raw, sep="\t", header=None, names=criteo_columns, dtype=criteo_dtypes, low_memory=False
         )
 
         # Create Dataset object
         dataset = self._build_dataset(command, df)
+
+        # Update status code
+        self._status_code = "200"
         return dataset
 
-    def _download(self) -> dict:
+    def _download(self, source: str, destination: str, command: PipelineCommand) -> dict:
         """Downloads the data from the site"""
 
-        os.makedirs(os.path.dirname(self._config["destination"]), exist_ok=True)
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
 
         # Override  start time since we're measuring internet speed
         self._start = datetime.now()
 
-        with requests.get(self._config["source"], stream=True) as response:
+        with requests.get(source, stream=True) as response:
             self._status_code = response.status_code
             if response.status_code == 200:
-                response_footer = self._process_response(response)
+                self._process_response(destination=destination, response=response, command=command)
+                self._logger.info(
+                    "\t{} Mb downloaded in {} {} Mb chunks. Download complete!".format(
+                        str(self._summary["Downloaded (Mb)"]), str(self._summary["Chunks Downloaded"]), str(self._chunk_size)
+                    )
+                )
             else:
                 raise ConnectionError(response)
-        return response_footer
 
-    def _process_response(self, response: requests.Response) -> dict:
+    def _process_response(self, destination: str, response: requests.Response, command: PipelineCommand) -> dict:
         """Processes an HTTP Response
 
         Args:
+            destination (str): The download destination file path
             response (requests.Response): HTTP Response object.
         """
 
-        response_header = self._setup_process_response(response)
+        self._setup_process_response(response, command)
 
         # Set chunk_size, defaults to 10Mb
         chunk_size = 1024 * 1024 * self._chunk_size
 
-        with open(self._config["destination"], "wb") as fd:
+        # Setup data for progress bar
+        size_in_bytes = int(response.headers.get("content-length", 0))
+        progress_bar = tqdm(total=size_in_bytes, unit="iB", unit_scale=True)
+
+        with open(destination, "wb") as fd:
             i = 0
             downloaded = 0
             for chunk in response.iter_content(chunk_size=chunk_size):
+                progress_bar.update(len(chunk))
 
                 # Download the chunk and capture transmission metrics.
                 downloaded = self._download_chunk(chunk, fd, response, i, downloaded)
 
                 i += 1
 
-        response_footer = self._teardown_process_response(response_header, i, downloaded)
-        return response_footer
+        progress_bar.close()
 
-    def _setup_process_response(self, response: requests.Response) -> None:
+        self._teardown_process_response(destination=destination, i=i, downloaded=downloaded)
+
+    def _setup_process_response(self, response: requests.Response, command: PipelineCommand) -> None:
         """Grab some metadata from the content header.
 
         Args:
             logger (logging): Voice, every method must have a voice, right?
             response (requests.Response): HTTP Response object.
         """
+
         self._logger.info(
-            "\tDownloading {} Mb\n".format(str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)))
+            "\tDownloading {} Mb in {} Mb chunks\n".format(
+                str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)), str(self._chunk_size)
+            )
         )
         # Grab response header information
-        d = OrderedDict()
-        d["Status Code"] = response.status_code
-        d["Content Type"] = response.headers.get("Content-Type", "")
-        d["Last Modified"] = response.headers.get("Last-Modified", "")
-        d["Content Length (Mb)"] = round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 3)
-        return d
+
+        self._summary["Status Code"] = response.status_code
+        self._summary["Content Type"] = response.headers.get("Content-Type", "")
+        self._summary["Last Modified"] = response.headers.get("Last-Modified", "")
+        self._summary["Content Length (Mb)"] = round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 3)
 
     def _download_chunk(self, chunk, fd, response: requests.Response, i: int = 0, downloaded: int = 0) -> dict:
         """Downloads a chunk of data from source site and produces some metrics.
@@ -190,13 +205,13 @@ class Extract(Task):
         except ZeroDivisionError as e:
             average_mbps = 0
 
-        # Every 10th chunk, we'll report progress
-        if (chunk_number) % 10 == 0:
-            self._logger.info(
-                "\tChunk #{}: {} percent downloaded at {} Mbps".format(
-                    str(chunk_number), str(round(pct_downloaded, 2)), str(round(average_mbps, 2))
-                )
-            )
+        # Every 10th chunk, we'll report progress. Disabled. Using progress bar.
+        # if (chunk_number) % 10 == 0:
+        #     self._logger.info(
+        #         "\tChunk #{}: {} percent downloaded at {} Mbps".format(
+        #             str(chunk_number), str(round(pct_downloaded, 2)), str(round(average_mbps, 2))
+        #         )
+        #     )
 
         self._chunk_metrics[chunk_number] = {
             "Downloaded": downloaded,
@@ -206,29 +221,51 @@ class Extract(Task):
         }
         return downloaded
 
-    def _teardown_process_response(self, response_header, i: int, downloaded: int) -> dict:
+    def _teardown_process_response(self, destination: str, i: int, downloaded: int) -> dict:
         """Deletes temporary files, and updates the response header with additional information
 
         Args:
-            response_header (dict): HTTP Response object.
+            destination (str): The download destination file path
+            i (int): The current number of chunks downloaded
             downloaded (int): Total bytes downloaded.
         """
         duration = datetime.now() - self._start
-        Mb = os.path.getsize(self._config["filepath_raw"]) / (1024 * 1024)
-        response_header["Chunk Size (Mb)"] = self._chunk_size
-        response_header["Chunks Downloaded"] = i + 1
-        response_header["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
-        response_header["File Size (Mb)"] = round(Mb, 3)
-        response_header["Mbps"] = round(Mb / duration.total_seconds(), 3)
+        Mb = os.path.getsize(destination) / (1024 * 1024)
+        self._summary["Chunk Size (Mb)"] = self._chunk_size
+        self._summary["Chunks Downloaded"] = i + 1
+        self._summary["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
+        self._summary["File Size (Mb)"] = round(Mb, 3)
+        self._summary["Mbps"] = round(Mb / duration.total_seconds(), 3)
 
-        return response_header
+    def _decompress(self, source: str, destination: str, command: PipelineCommand) -> None:
 
-    def _decompress(self) -> None:
-        data = tarfile.open(self._config["destination"])
+        self._logger.info("\tDecompression initiated.")
+        data = tarfile.open(source)
         with tempfile.TemporaryDirectory() as tempdirname:
             data.extractall(tempdirname)
-            tempfilepath = os.path.join(tempdirname, self._config["filepath_extract"])
-            shutil.copyfile(tempfilepath, self._config["filepath_raw"])
+            tempfilepath = os.path.join(tempdirname, self._config.filepath_extract)
+
+            self._summary["Size Extracted (Mb)"] = round(int(os.path.getsize(tempfilepath)) / (1024 * 1024), 2)
+
+            # If sampling, copy a sample from the temp file, otherwise copy the tempfile in its entirety
+            if command.sample_size > 1:
+                self._decompress_sample(
+                    source=tempfilepath,
+                    destination=destination,
+                    nrows=command.sample_size,
+                    random_state=command.random_state,
+                )
+            else:
+                shutil.copyfile(tempfilepath, destination)
+        self._logger.info("\tDecompression Complete! {} Mb Extracted.".format(str(self._summary["Size Extracted (Mb)"])))
+
+    def _decompress_sample(self, source: str, destination: str, nrows: int, random_state: int = None) -> None:
+        """Reads a sample from the source file and stores in destination."""
+        self._logger.info("\tSampling dataset initiated.")
+        sample_file(source=source, destination=destination, nrows=nrows, random_state=random_state)
+        self._summary["Sampled Dataset Observations"] = nrows
+        self._summary["Sampled Dataset Size"] = round(int(os.path.getsize(destination)) / (1024 * 1024), 2)
+        self._logger.info("\tSampling Complete! {} Rows Sampled.".format(str(nrows)))
 
     def _process_non_response(self, response: requests.Response) -> dict:
         """In case non 200 response from HTTP server.
@@ -237,9 +274,7 @@ class Extract(Task):
             response (requests.Response): HTTP Response object.
 
         """
-        response_footer = {}
-        response_footer["HTTP Response Status Code"] = response.status_code
-        return response_footer
+        self._summary["HTTP Response Status Code"] = response.status_code
 
     @property
     def summary(self) -> dict:
@@ -247,7 +282,7 @@ class Extract(Task):
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
-class TransformMissing(Task):
+class TransformETL(Task):
     """Replaces designated missing values (-1) with NaN
 
     Args:
@@ -258,7 +293,7 @@ class TransformMissing(Task):
     """
 
     def __init__(self, value: Union[str, list]) -> None:
-        super(TransformMissing, self).__init__()
+        super(TransformETL, self).__init__()
         self._value = value
         self._before = None
         self._after = None
@@ -272,6 +307,7 @@ class TransformMissing(Task):
 
         # Transform the missing values
         self._df = self._df.replace(self._value, np.nan)
+        self._status_code = "200"
 
         # Check missing after
         self._after = self._df.isna().sum().sum()
@@ -287,22 +323,19 @@ class TransformMissing(Task):
     def _response_normal(self) -> dict:
         rows, columns = self._data.shape
         cells = rows * columns
-        response_footer = OrderedDict()
-        response_footer["Rows"] = rows
-        response_footer["Columns"] = columns
-        response_footer["Cells"] = cells
-        response_footer["Missing Before"] = self._before
-        response_footer["Missing % Before"] = round(self._before / cells * 100, 2)
-        response_footer["Missing After"] = self._after
-        response_footer["Missing % After"] = round(self._after / cells * 100, 2)
-        response_footer["% Change"] = round(
-            (response_footer["Missing After"] - response_footer["Missing Before"]) / response_footer["Missing Before"] * 100,
+        self._summary["Rows"] = rows
+        self._summary["Columns"] = columns
+        self._summary["Cells"] = cells
+        self._summary["Missing Before"] = self._before
+        self._summary["Missing % Before"] = round(self._before / cells * 100, 2)
+        self._summary["Missing After"] = self._after
+        self._summary["Missing % After"] = round(self._after / cells * 100, 2)
+        self._summary["% Change"] = round(
+            (self._summary["Missing After"] - self._summary["Missing Before"]) / self._summary["Missing Before"] * 100,
             2,
         )
 
         self._status_code = "200"
-
-        return response_footer
 
     @property
     def summary(self) -> dict:
@@ -310,8 +343,11 @@ class TransformMissing(Task):
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
-class LoadDataset:
+class LoadDataset(Task):
     """Loads the dataset into the current workspace."""
+
+    def __init__(self) -> None:
+        super(LoadDataset, self).__init__()
 
     def _run(self, command: PipelineCommand, data: Dataset) -> Dataset:
         """Add the dataset to the current workspace
@@ -322,14 +358,16 @@ class LoadDataset:
         """
         self._workspace = Workspace(command.workspace)
         filepath = self._workspace.add_dataset(data)
+        # Update status code
+        self._status_code = "200"
         self._summary = OrderedDict()
-        self._summary["Status Code"] = 200
         self._summary["AID"] = data.aid
         self._summary["Workspace"] = data.workspace
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
         self._summary["name"] = data.name
         self._summary["filepath"] = filepath
+        return data
 
     @property
     def summary(self) -> dict:
