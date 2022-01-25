@@ -1,4 +1,4 @@
-current: vesuvio
+current: full_month
 random_state: 55
 sample_sizes:
   full_monte: 1

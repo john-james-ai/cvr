@@ -2,11 +2,8 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: intro
+root: 10_introduction
 parts:
-  - caption: Introduction
-    chapters:
-    - file: 10_introduction
   - caption: Methods
     chapters:
       - file: 20_methods_data_intro

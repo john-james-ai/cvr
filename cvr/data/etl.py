@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Monday, January 24th 2022, 11:51:29 am                                                                        #
+# Modified : Tuesday, January 25th 2022, 12:28:26 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -255,6 +255,7 @@ class Extract(Task):
                     random_state=self._command.random_state,
                 )
             else:
+                os.makedirs(os.path.dirname(destination), exist_ok=True)
                 shutil.copyfile(tempfilepath, destination)
         self._logger.info("\tDecompression Complete! {} Mb Extracted.".format(str(self._summary["Size Extracted (Mb)"])))
 
