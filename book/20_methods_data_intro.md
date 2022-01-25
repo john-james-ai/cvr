@@ -48,7 +48,3 @@ Note : All categorical features have been hashed.
 **Data Access**
 
 As of this writing the dataset may be obtained from the [Criteo AI Lab](http://ailab.criteo.com/criteo-sponsored-search-conversion-log-dataset/) website.
-
-# References
-```{bibliography}
-```

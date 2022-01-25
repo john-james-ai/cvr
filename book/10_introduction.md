@@ -38,5 +38,3 @@ Moreover, the explosive growth of customer behavior data has stimulated a need f
 
 Deep-CVR explores state-of-the-art deep learning methods to improve conversion rate prediction for the online advertising industry. Starting with baseline logistic regression models, we’ll explore supervised techniques such as factorization machines, multi-layer perceptron, convolutional neural network, recurrent neural network, and neural attention network architectures.
 
-```{bibliography}
-```
