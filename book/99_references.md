@@ -10,6 +10,8 @@ kernelspec:
   language: python
   name: python3
 ---
+
 # References
 ```{bibliography}
+:style: plain
 ```
