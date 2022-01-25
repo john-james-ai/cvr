@@ -13,9 +13,7 @@ kernelspec:
 # Introduction
 Digital advertising, a \$374.2 billion market {cite}`marketsGlobalDigitalAdvertising2021`, delivers advertising and promotional content to users through a range of online and digital channels such as search engines, mobile- apps, social media, email, and websites. Yet, digital marketing expenditures are expected to yield a predictable and positive return on investment (ROI) in terms of sales. Conversion rate, arguably the leading predictor of ROI, is defined as the number of conversions per visitor, or:
 
-$$
-\text{CVR}=\frac{\text{Number of Conversions}}{\text{Number of Visitors}}* 100
-$$
+$$\text{CVR}=\frac{\text{Number of Conversions}}{\text{Number of Visitors}}* 100$$
 
 What's more, investment in conversion rate optimization (CRO), the process of increasing the percentage of conversions, is significant and for good reason. It pays off! The proportion of marketing spend allocated to conversion optimization positively correlates with higher conversion rates.
 
