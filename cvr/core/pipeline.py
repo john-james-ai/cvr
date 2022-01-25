@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Monday, January 24th 2022, 11:18:48 am                                                                        #
+# Modified : Tuesday, January 25th 2022, 3:46:20 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -27,8 +27,8 @@ from collections import OrderedDict
 from typing import Union
 
 from cvr.core.asset import Asset
+from cvr.core.workspace import WorkspaceManager, Workspace
 from cvr.utils.logger import LoggerFactory
-from cvr.utils.config import WorkspaceConfig
 from cvr.utils.printing import Printer
 
 
@@ -37,30 +37,24 @@ class PipelineCommand:
     def __init__(
         self,
         aid: str,
-        workspace: str,
-        sample_size: float,
-        random_state: int,
-        stage: str,
         name: str,
+        workspace: Workspace,
+        chunk_size: int,
+        stage: str,
         logger: logging,
         force: bool = False,
-        keep_interim: bool = True,
         verbose: bool = True,
         progress: bool = False,
-        check_download: int = 20,
     ) -> None:
         self._aid = aid
-        self._workspace = workspace
-        self._sample_size = sample_size
-        self._random_state = random_state
-        self._stage = stage
         self._name = name
+        self._workspace = workspace
+        self._chunk_size = chunk_size
+        self._stage = stage
         self._logger = logger
         self._force = force
-        self._keep_interim = keep_interim
         self._verbose = verbose
         self._progress = progress
-        self._check_download = check_download
 
     @property
     def aid(self) -> str:
@@ -71,12 +65,8 @@ class PipelineCommand:
         return self._workspace
 
     @property
-    def sample_size(self) -> float:
-        return self._sample_size
-
-    @property
-    def random_state(self) -> int:
-        return self._random_state
+    def chunk_size(self) -> float:
+        return self._chunk_size
 
     @property
     def name(self) -> str:
@@ -95,20 +85,12 @@ class PipelineCommand:
         return self._force
 
     @property
-    def keep_interim(self) -> str:
-        return self._keep_interim
-
-    @property
     def verbose(self) -> str:
         return self._verbose
 
     @property
     def progress(self) -> str:
         return self._progress
-
-    @property
-    def check_download(self) -> str:
-        return self._check_download
 
 
 # ======================================================================================================================== #
@@ -139,18 +121,6 @@ class Pipeline(Asset):
         return self._command.name
 
     @property
-    def workspace(self) -> str:
-        return self._command.workspace
-
-    @property
-    def sample_size(self) -> str:
-        return self._command.sample_size
-
-    @property
-    def random_state(self) -> str:
-        return self._command.random_state
-
-    @property
     def stage(self) -> str:
         return self._command.stage
 
@@ -159,16 +129,8 @@ class Pipeline(Asset):
         return self._command.force
 
     @property
-    def keep_interim(self) -> bool:
-        return self._command.keep_interim
-
-    @property
     def verbose(self) -> bool:
         return self._command.verbose
-
-    @property
-    def check_download(self) -> bool:
-        return self._command.check_download
 
     @property
     def summary(self) -> None:
@@ -220,16 +182,13 @@ class PipelineBuilder(ABC):
         self._name = None
         self._stage = None
         self._force = False
-        self._keep_interim = None
+        self._chunk_size = 10
         self._verbose = True
         self._command = None
         self._progress = False
-        self._check_download = 20
 
-        self._config = WorkspaceConfig()
-        self._workspace = self._config.get_workspace()
-        self._sample_size = self._config.get_sample_size()
-        self._random_state = self._config.get_random_state()
+        wsm = WorkspaceManager()
+        self._workspace = wsm.get_current_workspace()
 
         self._pipeline = None
         self._tasks = []
@@ -248,6 +207,10 @@ class PipelineBuilder(ABC):
         self._stage = stage
         return self
 
+    def set_chunk_size(self, chunk_size: int) -> None:
+        self._chunk_size = chunk_size
+        return self
+
     def set_force(self, force: bool = False) -> None:
         self._force = force
         return self
@@ -260,30 +223,23 @@ class PipelineBuilder(ABC):
         self._progress = progress
         return self
 
-    def set_check_download(self, check_download: int = 20) -> None:
-        self._check_download = check_download
-        return self
-
     def build_command(self) -> PipelineCommand:
         self._command = PipelineCommand(
-            aid=self._workspace + "_" + self._pipeline.__class__.__name__ + "_" + self._stage + "_" + self._name,
-            workspace=self._workspace,
-            sample_size=self._sample_size,
-            random_state=self._random_state,
-            stage=self._stage,
+            aid=self._workspace.name + "_" + self._stage + "_" + self._pipeline.__class__.__name__ + "_" + self._name,
             name=self._name,
+            workspace=self._workspace,
+            chunk_size=self._chunk_size,
+            stage=self._stage,
             logger=self._logger,
             force=self._force,
-            keep_interim=self._keep_interim,
             verbose=self._verbose,
             progress=self._progress,
-            check_download=self._check_download,
         )
 
     def build_log(self) -> None:
         factory = LoggerFactory()
         self._logger = factory.get_logger(
-            workspace=self._workspace, stage=self._stage, name=self._name, verbose=self._verbose
+            workspace=self._workspace.name, stage=self._stage, name=self._name, verbose=self._verbose
         )
 
     @abstractmethod

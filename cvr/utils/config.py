@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Sunday, January 23rd 2022, 4:52:38 pm                                                                         #
+# Modified : Tuesday, January 25th 2022, 11:59:43 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -40,10 +40,6 @@ class Config(ABC):
     @property
     @abstractmethod
     def config_filepath(self) -> str:
-        pass
-
-    @abstractmethod
-    def print(self) -> None:
         pass
 
     def load_config(self) -> dict:
@@ -75,27 +71,11 @@ class WorkspaceConfig(Config):
     def config_filepath(self) -> str:
         return self._config_filepath
 
-    def get_workspace(self) -> str:
-        config = self.load_config()
-        return config["current"]
+    def get_config(self) -> str:
+        return self.load_config()
 
-    def set_workspace(self, workspace) -> str:
-        config = self.load_config()
-        config["current"] = workspace
+    def set_config(self, config) -> None:
         self.save_config(config)
-
-    def get_sample_size(self) -> float:
-        config = self.load_config()
-        current = config["current"]
-        return float(config["sample_sizes"][current])
-
-    def get_random_state(self) -> float:
-        config = self.load_config()
-        return int(config["random_state"])
-
-    def print(self) -> None:
-        config = self.load_config()
-        self._printer.print_dictionary(config, "Workspace Configuration")
 
 
 # ======================================================================================================================== #

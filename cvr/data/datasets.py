@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Monday, January 24th 2022, 11:03:34 am                                                                        #
+# Modified : Tuesday, January 25th 2022, 2:49:53 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -53,7 +53,6 @@ from cvr.core.asset import Asset
 
 from cvr.data.transform import Transformation
 from cvr.data.profile import DataProfiler
-from cvr.utils.config import WorkspaceConfig
 from cvr.visuals.visualize import Visual
 from cvr.utils.printing import Printer
 
@@ -73,15 +72,9 @@ class AbstractDataset(Asset):
         self._df = df
         self._profile = profile
 
-        self._workspace = WorkspaceConfig().get_workspace()
         self._printer = Printer()
         self._visual = Visual()
         self._transformation = Transformation(self._visual)
-
-        self._set_id()
-
-    def _set_id(self) -> None:
-        self._id = self._workspace + "_" + self._stage + "_" + self._name + "_"
 
     def set_task_data(self, task):
         """Injects a task object with the data from this dataset.
@@ -106,12 +99,16 @@ class AbstractDataset(Asset):
         return self._name
 
     @property
-    def workspace(self) -> str:
-        return self._workspace
-
-    @property
     def description(self) -> str:
         return self._description
+
+    @property
+    def size(self) -> str:
+        return self._df.memory_usage(deep=True)
+
+    @property
+    def shape(self) -> str:
+        return self._df.shape
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                  PROFILE PROPERTIES AND METHODS                                                     #
@@ -272,8 +269,14 @@ class AbstractDatasetBuilder(ABC):
 
         self._dataset = None
 
-        self._workspace = WorkspaceConfig().get_workspace()
         self._profiler = DataProfiler()
+
+    def reset(self) -> None:
+        self._dataset_name = None
+        self._stage = None
+        self._description = None
+        self._df = None
+        self._dataset = None
 
     def set_data(self, df: pd.DataFrame) -> None:
         self._df = df

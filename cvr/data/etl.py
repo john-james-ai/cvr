@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Tuesday, January 25th 2022, 12:28:26 am                                                                       #
+# Modified : Tuesday, January 25th 2022, 3:52:25 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -20,6 +20,7 @@
 """Provides base classes for operators, including pipelines and tasks."""
 from abc import ABC, abstractmethod
 import os
+import math
 from collections import OrderedDict
 from datetime import datetime, date
 import pandas as pd
@@ -49,19 +50,18 @@ class Extract(Task):
 
     Args:
         config (CriteoConfig): Configuration object with parameters needed download the source data.
-        chunk_size(int): Chunk size in Mb
 
     """
 
-    def __init__(self, config: dict, chunk_size: int = 10) -> None:
+    def __init__(self, config: dict) -> None:
         super(Extract, self).__init__()
         self._config = config
-        self._chunk_size = chunk_size
 
         self._chunk_metrics = OrderedDict()
 
         self._filepath_download = None
         self._filepath_raw = None
+        self._n_groups = 10
 
     @property
     def chunk_metrics(self) -> dict:
@@ -69,12 +69,19 @@ class Extract(Task):
         return self._chunk_metrics
 
     def _run(self, data: Dataset = None) -> Dataset:
-        """Downloads the data if it doesn't already exist or if self._command.force is True."""
+        """Downloads the data if it doesn't already exist or if self._command.force is True.
+
+        Args:
+            data (Dataset): Dataset created by the previous step.
+
+        Returns:
+            Dataset object
+        """
 
         # Format filepaths.
         self._source = self._config.source
         self._filepath_download = self._config.destination
-        self._filepath_raw = os.path.join("data", self._command.workspace, self._config.filepath_raw)
+        self._filepath_raw = os.path.join("data", self._command.workspace.name, self._config.filepath_raw)
 
         # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
 
@@ -115,7 +122,9 @@ class Extract(Task):
                 self._process_response(destination=destination, response=response)
                 self._logger.info(
                     "\n\tDownload complete! {} Mb downloaded in {} {} Mb chunks.".format(
-                        str(self._summary["Downloaded (Mb)"]), str(self._summary["Chunks Downloaded"]), str(self._chunk_size)
+                        str(self._summary["Downloaded (Mb)"]),
+                        str(self._summary["Chunks Downloaded"]),
+                        str(self._command.chunk_size),
                     )
                 )
             else:
@@ -132,11 +141,16 @@ class Extract(Task):
         self._setup_process_response(response)
 
         # Set chunk_size, defaults to 10Mb
-        chunk_size = 1024 * 1024 * self._chunk_size
+        chunk_size = 1024 * 1024 * self._command.chunk_size
+
+        # Get size of content
+        size_in_bytes = int(response.headers.get("content-length", 0))
+
+        # Set number of iterations in each group of chunks for reporting purposes
+        group_size = math.floor(math.ceil(size_in_bytes / chunk_size) / self._n_groups)
 
         # Setup data for progress bar
         if self._command.progress and self._command.verbose:
-            size_in_bytes = int(response.headers.get("content-length", 0))
             progress_bar = tqdm(total=size_in_bytes, unit="iB", unit_scale=True)
 
         with open(destination, "wb") as fd:
@@ -147,7 +161,9 @@ class Extract(Task):
                     progress_bar.update(len(chunk))
 
                 # Download the chunk and capture transmission metrics.
-                downloaded = self._download_chunk(chunk, fd, response, i, downloaded)
+                downloaded = self._download_chunk(
+                    chunk=chunk, fd=fd, response=response, group_size=group_size, i=i, downloaded=downloaded
+                )
 
                 i += 1
 
@@ -166,7 +182,7 @@ class Extract(Task):
 
         self._logger.info(
             "\tDownloading {} Mb in {} Mb chunks\n".format(
-                str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)), str(self._chunk_size)
+                str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)), str(self._command.chunk_size)
             )
         )
         # Grab response header information
@@ -176,7 +192,9 @@ class Extract(Task):
         self._summary["Last Modified"] = response.headers.get("Last-Modified", "")
         self._summary["Content Length (Mb)"] = round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 3)
 
-    def _download_chunk(self, chunk, fd, response: requests.Response, i: int = 0, downloaded: int = 0) -> dict:
+    def _download_chunk(
+        self, chunk, fd, response: requests.Response, group_size: int, i: int = 0, downloaded: int = 0
+    ) -> dict:
         """Downloads a chunk of data from source site and produces some metrics.
 
         Args:
@@ -206,7 +224,7 @@ class Extract(Task):
 
         # If progress is disabled and verbose is True, provide progress every 'check_download' iterations
         if not self._command.progress and self._command.verbose:
-            if (chunk_number) % self._command.check_download == 0:
+            if (chunk_number) % group_size == 0:
                 self._logger.info(
                     "\tChunk #{}: {} percent downloaded at {} Mbps".format(
                         str(chunk_number), str(round(pct_downloaded, 2)), str(round(average_mbps, 2))
@@ -231,7 +249,7 @@ class Extract(Task):
         """
         duration = datetime.now() - self._start
         Mb = os.path.getsize(destination) / (1024 * 1024)
-        self._summary["Chunk Size (Mb)"] = self._chunk_size
+        self._summary["Chunk Size (Mb)"] = self._command.chunk_size
         self._summary["Chunks Downloaded"] = i + 1
         self._summary["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
         self._summary["Mbps"] = round(Mb / duration.total_seconds(), 3)
@@ -247,12 +265,12 @@ class Extract(Task):
             self._summary["Size Extracted (Mb)"] = round(int(os.path.getsize(tempfilepath)) / (1024 * 1024), 2)
 
             # If sampling, copy a sample from the temp file, otherwise copy the tempfile in its entirety
-            if self._command.sample_size > 1:
+            if self._command.workspace.sample_size is not None:
                 self._decompress_sample(
                     source=tempfilepath,
                     destination=destination,
-                    nrows=self._command.sample_size,
-                    random_state=self._command.random_state,
+                    nrows=self._command.workspace.sample_size,
+                    random_state=self._command.workspace.random_state,
                 )
             else:
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -300,6 +318,14 @@ class TransformETL(Task):
         self._after = None
 
     def _run(self, data: Dataset = None) -> Dataset:
+        """Transforms source data.
+
+        Args:
+            data (Dataset): Dataset created by the previous step.
+
+        Returns:
+            Dataset object
+        """
 
         data.set_task_data(self)
 
@@ -356,16 +382,17 @@ class LoadDataset(Task):
         """Add the dataset to the current workspace
 
         Args:
-            command (PipelineCommand): Parameters for the Pipeline
             data (Dataset): Dataset created by the previous step.
+
+        Returns:
+            Dataset object
         """
-        self._workspace = Workspace(self._command.workspace)
-        filepath = self._workspace.add_dataset(data)
+        filepath = self._command.workspace.add_dataset(data)
         # Update status code
         self._status_code = "200"
         self._summary = OrderedDict()
         self._summary["AID"] = data.aid
-        self._summary["Workspace"] = data.workspace
+        self._summary["Workspace"] = self._command.workspace.name
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
         self._summary["filepath"] = filepath
