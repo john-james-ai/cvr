@@ -1,7 +1,7 @@
 # Book settings
 # Learn more at https://jupyterbook.org/customize/config.html
 
-title: Conversion Rate Prediction
+title: Deep-CVR - Deep Learning for Online Conversion Rate Prediction amidst Delayed Feedback
 author: John James
 logo: cvr.png
 
@@ -30,3 +30,9 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+
+parse:
+  myst_enable_extensions:
+    # don't forget to list any other extensions you want enabled,
+    # including those that are enabled by default!
+    - amsmath
