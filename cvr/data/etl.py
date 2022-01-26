@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Tuesday, January 25th 2022, 6:48:13 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 11:45:36 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -41,7 +41,7 @@ from cvr.core.task import Task, STATUS_CODES
 from cvr.core.workspace import Workspace
 from cvr.utils.config import CriteoConfig
 from cvr.core.pipeline import PipelineCommand
-from cvr.data.datasets import Dataset
+from cvr.data.dataset import Dataset
 from cvr.utils.sampling import sample_file
 
 # ------------------------------------------------------------------------------------------------------------------------ #

@@ -3,44 +3,21 @@
 # ======================================================================================================================== #
 # Project  : Conversion Rate Prediction (CVR)                                                                              #
 # Version  : 0.1.0                                                                                                         #
-# File     : \datasets.py                                                                                                  #
-# Language : Python 3.10.1                                                                                                 #
+# File     : \dataset.py                                                                                                   #
+# Language : Python 3.7.12                                                                                                 #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Author   : John James                                                                                                    #
 # Email    : john.james.ai.studio@gmail.com                                                                                #
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Tuesday, January 25th 2022, 2:49:53 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 11:47:14 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2021 Bryant St. Labs                                                                                      #
+# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
 # ======================================================================================================================== #
-"""Dataset Module
-
-Three categories of classes are defined here:
-    1. Dataset: Object encapsulating a dataset.
-    2. Dataset Persistence: Classes responsible for managing dataset persistence
-    3. Dataset Builders The construction of Dataset objects
-
-Datasets encapsulate the data and include the following classes:
-    1. Dataset: Encapsulates the data and the following two classes
-    2. DatasetProfile: Profiles the dataset
-    3. DatasetMetadata: Contains all administrative, descriptive, and structural metadata.
-
-Dataset persistence classes are:
-    1. DataStore: Abstracts the collection of data files and provides basic inventory management.
-    2. DAO: Data access object encapsulating file IO.
-
-Dataset Builders construct dataset objects. The builder classes include:
-    1. DatasetBuilder: Defines the interface for the following concrete builders.
-    2. DatasetBuilderFile: Build a Dataset object from a file.
-    3. DatasetBuilderDF: Builds a Dataset object from a DataFrame.
-
-
-
-"""
+"""Dataset Module"""
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from datetime import datetime
@@ -51,7 +28,7 @@ import uuid
 
 from cvr.core.asset import Asset
 
-from cvr.data.transform import Transformation
+from cvr.visuals.transform import Transformation
 from cvr.data.profile import DataProfiler
 from cvr.visuals.visualize import Visual
 from cvr.utils.printing import Printer

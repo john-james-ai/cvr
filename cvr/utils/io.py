@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, January 25th 2022, 1:35:16 pm                                                                        #
-# Modified : Tuesday, January 25th 2022, 3:54:23 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 11:31:50 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -56,3 +56,13 @@ class Pickler:
         picklefile = open(filepath, "wb")
         pickle.dump(asset, picklefile)
         picklefile.close()
+
+    def exists(self, filepath) -> bool:
+        """Returns a boolean indicating whether a file exists at the filepath
+
+        Args:
+            filepath (str): The path to the file
+        Returns:
+            bool
+        """
+        return os.path.exists(filepath)

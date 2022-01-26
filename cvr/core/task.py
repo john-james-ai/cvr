@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Monday, January 24th 2022, 11:00:57 am                                                                        #
+# Modified : Tuesday, January 25th 2022, 11:45:35 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -25,8 +25,8 @@ import logging
 import pandas as pd
 from typing import Union
 
-from cvr.data.datasets import DatasetBuilder
-from cvr.data.datasets import Dataset
+from cvr.data.dataset import DatasetBuilder
+from cvr.data.dataset import Dataset
 from cvr.core.pipeline import PipelineCommand
 from cvr.utils.printing import Printer
 from cvr.utils.format import titlelize

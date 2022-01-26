@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Tuesday, January 25th 2022, 5:43:18 pm                                                                        #
+# Modified : Wednesday, January 26th 2022, 12:57:40 am                                                                     #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -226,9 +226,7 @@ class PipelineBuilder(ABC):
 
     def build_log(self) -> None:
         factory = LoggerFactory()
-        self._logger = factory.get_logger(
-            workspace=self._workspace.name, stage=self._stage, name=self._name, verbose=self._verbose
-        )
+        self._logger = factory.get_logger(workspace=self._workspace.name, verbose=self._verbose)
 
     def reset(self) -> None:
         self._pipeline = None

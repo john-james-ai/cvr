@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, December 26th 2021, 3:56:00 pm                                                                        #
-# Modified : Thursday, January 13th 2022, 12:21:13 am                                                                      #
+# Modified : Tuesday, January 25th 2022, 11:46:50 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -29,7 +29,7 @@ from cvr.utils.file import sample
 from cvr.utils.printing import Printer
 from cvr.data.datastore import DataStore
 from cvr.visuals.visualize import Visual
-from cvr.data.transform import Transformer
+from cvr.visuals.transform import Transformer
 from cvr.data.outliers import OutlierDetector
 from cvr.data import feature_columns, target_columns, numeric_columns
 

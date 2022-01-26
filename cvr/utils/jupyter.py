@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, January 25th 2022, 8:19:18 pm                                                                        #
-# Modified : Tuesday, January 25th 2022, 8:26:48 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 8:31:33 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -28,7 +28,7 @@ def prepare_notebooks():
 
     # Text to look for in adding tags
     text_search_dict = {
-        "# IMPORTS": "hide-output",  # Remove the whole cell
+        "# IMPORTS": "remove-output",  # Remove the whole cell
         "# GLUE": "hide-input",  # Remove only the input
         "# HIDE CODE": "hide-input",  # Hide the input w/ a button to show
     }
