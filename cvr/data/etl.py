@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Tuesday, January 25th 2022, 3:52:25 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 6:48:13 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -53,9 +53,12 @@ class Extract(Task):
 
     """
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, chunk_size: int = 10, sample_size: int = None, random_state: int = None) -> None:
         super(Extract, self).__init__()
         self._config = config
+        self._chunk_size = chunk_size
+        self._sample_size = sample_size
+        self._random_state = random_state
 
         self._chunk_metrics = OrderedDict()
 
@@ -124,7 +127,7 @@ class Extract(Task):
                     "\n\tDownload complete! {} Mb downloaded in {} {} Mb chunks.".format(
                         str(self._summary["Downloaded (Mb)"]),
                         str(self._summary["Chunks Downloaded"]),
-                        str(self._command.chunk_size),
+                        str(self._chunk_size),
                     )
                 )
             else:
@@ -141,13 +144,16 @@ class Extract(Task):
         self._setup_process_response(response)
 
         # Set chunk_size, defaults to 10Mb
-        chunk_size = 1024 * 1024 * self._command.chunk_size
+        chunk_size = 1024 * 1024 * self._chunk_size
 
         # Get size of content
         size_in_bytes = int(response.headers.get("content-length", 0))
 
+        # Get the number of chunks
+        n_chunks = math.ceil(size_in_bytes / chunk_size)
+
         # Set number of iterations in each group of chunks for reporting purposes
-        group_size = math.floor(math.ceil(size_in_bytes / chunk_size) / self._n_groups)
+        group_size = self._group_size(n_chunks)
 
         # Setup data for progress bar
         if self._command.progress and self._command.verbose:
@@ -172,6 +178,15 @@ class Extract(Task):
 
         self._teardown_process_response(destination=destination, i=i, downloaded=downloaded)
 
+    def _group_size(self, n_chunks: int, idx: int = 0) -> int:
+        """Computes the number of chunk download iterations in a group for reporting purposes"""
+        group_sizes = [1, 5, 10, 20, 50, 100]
+        if n_chunks / group_sizes[idx] <= self._n_groups:
+            return group_sizes[idx]
+        else:
+            idx += 1
+            return self._group_size(n_chunks, idx)
+
     def _setup_process_response(self, response: requests.Response) -> None:
         """Grab some metadata from the content header.
 
@@ -182,7 +197,7 @@ class Extract(Task):
 
         self._logger.info(
             "\tDownloading {} Mb in {} Mb chunks\n".format(
-                str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)), str(self._command.chunk_size)
+                str(round(int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 2)), str(self._chunk_size)
             )
         )
         # Grab response header information
@@ -249,7 +264,7 @@ class Extract(Task):
         """
         duration = datetime.now() - self._start
         Mb = os.path.getsize(destination) / (1024 * 1024)
-        self._summary["Chunk Size (Mb)"] = self._command.chunk_size
+        self._summary["Chunk Size (Mb)"] = self._chunk_size
         self._summary["Chunks Downloaded"] = i + 1
         self._summary["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
         self._summary["Mbps"] = round(Mb / duration.total_seconds(), 3)
@@ -265,12 +280,12 @@ class Extract(Task):
             self._summary["Size Extracted (Mb)"] = round(int(os.path.getsize(tempfilepath)) / (1024 * 1024), 2)
 
             # If sampling, copy a sample from the temp file, otherwise copy the tempfile in its entirety
-            if self._command.workspace.sample_size is not None:
+            if self._sample_size is not None:
                 self._decompress_sample(
                     source=tempfilepath,
                     destination=destination,
-                    nrows=self._command.workspace.sample_size,
-                    random_state=self._command.workspace.random_state,
+                    nrows=self._sample_size,
+                    random_state=self._random_state,
                 )
             else:
                 os.makedirs(os.path.dirname(destination), exist_ok=True)

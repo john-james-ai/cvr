@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Monday, January 24th 2022, 8:00:40 am                                                                         #
+# Modified : Tuesday, January 25th 2022, 5:44:18 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -49,7 +49,7 @@ class ETLTests:
     def test_tasks(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        self._extract = Extract(config=self._config)
+        self._extract = Extract(config=self._config, sample_size=1000, random_state=55)
         self._transform = TransformETL(value=[-1, "-1"])
         self._load = LoadDataset()
 
@@ -59,10 +59,7 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self._builder = DataPipelineBuilder()
-        self._builder.create()
-        self._builder.set_name(name="11th_street").set_stage("seed").set_force(False).set_keep_interim(True).set_verbose(
-            True
-        )
+        self._builder.set_name(name="11th_street").set_stage("seed").set_force(False).set_verbose(True)
         self._builder.add_task(self._extract)
         self._builder.add_task(self._transform)
         self._builder.add_task(self._load)

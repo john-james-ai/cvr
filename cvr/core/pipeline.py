@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:46:57 pm                                                                      #
-# Modified : Tuesday, January 25th 2022, 3:46:20 pm                                                                        #
+# Modified : Tuesday, January 25th 2022, 5:43:18 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -39,7 +39,6 @@ class PipelineCommand:
         aid: str,
         name: str,
         workspace: Workspace,
-        chunk_size: int,
         stage: str,
         logger: logging,
         force: bool = False,
@@ -49,7 +48,6 @@ class PipelineCommand:
         self._aid = aid
         self._name = name
         self._workspace = workspace
-        self._chunk_size = chunk_size
         self._stage = stage
         self._logger = logger
         self._force = force
@@ -63,10 +61,6 @@ class PipelineCommand:
     @property
     def workspace(self) -> str:
         return self._workspace
-
-    @property
-    def chunk_size(self) -> float:
-        return self._chunk_size
 
     @property
     def name(self) -> str:
@@ -182,7 +176,6 @@ class PipelineBuilder(ABC):
         self._name = None
         self._stage = None
         self._force = False
-        self._chunk_size = 10
         self._verbose = True
         self._command = None
         self._progress = False
@@ -207,10 +200,6 @@ class PipelineBuilder(ABC):
         self._stage = stage
         return self
 
-    def set_chunk_size(self, chunk_size: int) -> None:
-        self._chunk_size = chunk_size
-        return self
-
     def set_force(self, force: bool = False) -> None:
         self._force = force
         return self
@@ -228,7 +217,6 @@ class PipelineBuilder(ABC):
             aid=self._workspace.name + "_" + self._stage + "_" + self._pipeline.__class__.__name__ + "_" + self._name,
             name=self._name,
             workspace=self._workspace,
-            chunk_size=self._chunk_size,
             stage=self._stage,
             logger=self._logger,
             force=self._force,
@@ -242,9 +230,9 @@ class PipelineBuilder(ABC):
             workspace=self._workspace.name, stage=self._stage, name=self._name, verbose=self._verbose
         )
 
-    @abstractmethod
-    def create(self) -> None:
-        pass
+    def reset(self) -> None:
+        self._pipeline = None
+        self._tasks = []
 
     def add_task(self, task) -> None:
         task.task_seq = self._task_seq
@@ -263,7 +251,3 @@ class DataPipelineBuilder(PipelineBuilder):
 
     def __init__(self) -> None:
         super(DataPipelineBuilder, self).__init__()
-
-    def create(self) -> None:
-        self._pipeline = None
-        self._tasks = []
