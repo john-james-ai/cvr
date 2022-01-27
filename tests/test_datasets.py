@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 4:41:43 am                                                                        #
-# Modified : Tuesday, January 25th 2022, 11:45:35 pm                                                                       #
+# Modified : Wednesday, January 26th 2022, 9:34:25 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,8 +26,8 @@ import shutil
 import pandas as pd
 from datetime import datetime
 
-from cvr.data.dataset import Dataset, DatasetBuilder
-from cvr.utils.file import sample_df
+from cvr.core.dataset import Dataset, DatasetBuilder, DatasetRequest
+from cvr.utils.sampling import sample_df
 from cvr.data import criteo_columns, criteo_dtypes
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -39,8 +39,11 @@ logger = logging.getLogger(__name__)
 class DatasetTests:
     def __init__(self):
         start = datetime.now()
-        filepath = "tests\\test_data\criteo\staged\criteo_sample.pkl"
+        filepath = "tests\data\criteo\staged\criteo_sample.pkl"
         self.df = pd.read_pickle(filepath)
+        self.request = DatasetRequest(
+            name="After Hours", description="Have a Margarita and Keep Fighting", stage="Left", data=self.df
+        )
         self.name = "After Hours"
         self.description = "Have a Margarita and Keep Fighting"
         self.stage = "Left"
@@ -52,10 +55,9 @@ class DatasetTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
         start = datetime.now()
         b = DatasetBuilder()
-        self.ds = b.set_data(self.df).set_name(self.name).set_description(self.description).set_stage(self.stage).build()
+        self.ds = b.make_request(self.request).build()
 
         assert self.ds.name == self.name, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-        assert self.ds.workspace == "dev", logger.error("Failure in {}.".format(inspect.stack()[0][3]))
         assert self.ds.stage == self.stage, logger.error("Failure in {}.".format(inspect.stack()[0][3]))
         assert isinstance(self.ds, Dataset), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
@@ -74,19 +76,19 @@ class DatasetTests:
         self.ds.summary
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_data_types(self):
+    def datatypes(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-        self.ds.data_types
+        self.ds.datatypes
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def test_numerics(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-        self.ds.numeric_statistics
+        self.ds.numerics
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def test_categoricals(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-        self.ds.categorical_statistics
+        self.ds.categoricals
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def test_missing_summary(self):
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     t.test_builder()
     t.test_info()
     t.test_summary()
-    t.test_data_types()
+    t.datatypes()
     t.test_numerics()
     t.test_categoricals()
     t.test_missing_summary()

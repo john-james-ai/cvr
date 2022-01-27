@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 4:42:38 am                                                                         #
-# Modified : Wednesday, January 26th 2022, 3:21:09 am                                                                      #
+# Modified : Wednesday, January 26th 2022, 11:57:40 pm                                                                     #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -27,8 +27,8 @@ import shutil
 from cvr.utils.config import WorkspaceConfig
 from cvr.utils.logger import LoggerFactory
 from cvr.utils.printing import Printer
-from cvr.data.dataset import Dataset
-from cvr.core.asset import Asset, DatasetManager
+from cvr.core.dataset import Dataset
+from cvr.core.asset import Asset, AssetManager, DatasetManager
 from cvr.utils.io import Pickler
 
 
@@ -93,11 +93,10 @@ class Workspace:
 #                                            WORKSPACE MANAGER                                                             #
 # ======================================================================================================================== #
 class WorkspaceManager(ABC):
-    """Builds and manages workspace objects."""
+    """Quasi Singleton: Builds and manages workspace objects."""
 
-    def __init__(self, basedir: str = None) -> None:
-        self._basedir = basedir if basedir is not None else ""
-        self._workspaces_dir = os.path.join(basedir, "workspaces")
+    def __init__(self) -> None:
+        self._workspaces_dir = "workspaces"
         self._workspaces_filepath = os.path.join(self._workspaces_dir, "workspaces.pkl")
         self._io = Pickler()
         self._printer = Printer()
@@ -248,5 +247,44 @@ class WorkspaceManager(ABC):
 
 
 # ======================================================================================================================== #
-#                                            TEST WORKSPACE MAA                                                             #
+#                                               WORKSPACE BUILDER                                                          #
 # ======================================================================================================================== #
+class WorkspaceBuilder(ABC):
+    """Abstract interface for workspace builders."""
+
+    @property
+    @abstractmethod
+    def workspace(self) -> None:
+        pass
+
+    @abstractmethod
+    def set_workspace_name(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_workspace_description(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_dataset_config(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_dataset_name(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_dataset_name(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_dataset_size(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def set_istest(self) -> None:
+        pass
+
+    @abstractmethod
+    def set_random_state(self, model: AssetManager) -> None:
+        pass

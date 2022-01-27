@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Tuesday, January 25th 2022, 5:44:18 pm                                                                        #
+# Modified : Thursday, January 27th 2022, 1:36:30 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -25,9 +25,13 @@ import pandas as pd
 from datetime import datetime
 import inspect
 import time
+import shutil
 
+from cvr.core.workspace import WorkspaceManager
+from cvr.core.pipeline import PipelineRequest
+from cvr.core.dataset import DatasetRequest
 from cvr.data.etl import Extract, TransformETL, LoadDataset
-from cvr.core.pipeline import PipelineCommand, DataPipelineBuilder, DataPipeline
+from cvr.core.pipeline import DataPipelineBuilder, DataPipeline, DataPipelineRequest
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.utils.config import CriteoConfig
 
@@ -37,19 +41,27 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------------------------------ #
 class ETLTests:
     def __init__(self):
-        config_filepath = "tests\\test_config\criteo.yaml"
+        # Create Test Workspace if it doesn't already exist
+        wsm = WorkspaceManager()
+        if wsm.exists("test_etl"):
+            self._workspace = wsm.get_workspace("test_etl")
+        else:
+            self._workspace = wsm.create_workspace(name="test_etl", description="Test ETL", current=True)
+
+        # Get configuration for data source
         self._config = CriteoConfig()
 
-        if os.path.exists(self._config.destination):
+        # Delete downloaded data if testing download functionality.
+        if os.path.exists(self._workspace.directory):
             x = input("Delete existing download?")
             if "y" in x:
-                os.remove(self._config.destination)
+                shutil.rmtree(self._workspace.directory)
                 time.sleep(3)
 
     def test_tasks(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-        self._extract = Extract(config=self._config, sample_size=1000, random_state=55)
+        self._extract = Extract(datasource_config=self._config)
         self._transform = TransformETL(value=[-1, "-1"])
         self._load = LoadDataset()
 
@@ -58,13 +70,27 @@ class ETLTests:
     def test_builder(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
+        dataset_request = DatasetRequest(
+            name="test_etl_dataset", description="Sample Dataset for ETL Test", stage="test", sample_size=1000
+        )
+        data_pipeline_request = DataPipelineRequest(
+            name="test_etl_pipeline",
+            stage="test",
+            workspace=self._workspace,
+            logging_level="info",
+            force=True,
+            dataset_request=dataset_request,
+        )
+
         self._builder = DataPipelineBuilder()
-        self._builder.set_name(name="11th_street").set_stage("seed").set_force(False).set_verbose(True)
-        self._builder.add_task(self._extract)
-        self._builder.add_task(self._transform)
-        self._builder.add_task(self._load)
-        self._builder.build()
-        self._pipeline = self._builder.pipeline
+        self._pipeline = (
+            self._builder.make_request(data_pipeline_request)
+            .add_task(self._extract)
+            .add_task(self._transform)
+            .add_task(self._load)
+            .build()
+            .pipeline
+        )
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
@@ -76,7 +102,7 @@ class ETLTests:
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_data(self):
+    def data(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self.dataset.info()
@@ -97,7 +123,7 @@ if __name__ == "__main__":
     t.test_tasks()
     t.test_builder()
     t.test_pipeline()
-    t.test_data()
+    t.data()
     logger.info(" Completed ETL Pipeline Tests ")
 
 #%%

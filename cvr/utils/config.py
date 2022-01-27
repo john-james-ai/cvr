@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, December 25th 2021, 11:07:50 am                                                                     #
-# Modified : Tuesday, January 25th 2022, 11:59:43 am                                                                       #
+# Modified : Thursday, January 27th 2022, 1:29:18 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -102,8 +102,8 @@ class CriteoConfig(Config):
         return self._config_filepath
 
     @property
-    def source(self) -> str:
-        return self._config["source"]
+    def url(self) -> str:
+        return self._config["url"]
 
     @property
     def destination(self) -> str:

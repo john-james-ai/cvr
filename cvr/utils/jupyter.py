@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, January 25th 2022, 8:19:18 pm                                                                        #
-# Modified : Tuesday, January 25th 2022, 8:31:33 pm                                                                        #
+# Modified : Thursday, January 27th 2022, 2:49:35 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,11 +26,28 @@ def prepare_notebooks():
     # Collect a list of all notebooks in the content folder
     notebooks = glob("book/*.ipynb", recursive=True)
 
+    # Userful tags
+    # Two types of tags, hide and remove.
+    #   Hide provides a button to reveal the cell contents
+    #   Remove prevents the content from appearing in the HTML at all.
+    # Hide Tags:
+    #   "hide-input": Hides the cell but displays the output
+    #   "hide-output": Hides the output from a cell, but provides a button to show
+    #   "hide-cell": Hides both input and output
+    # Remove Tags:
+    #    "remove-input": Removes cell from HTML, but shows ouput. No botton available
+    #    "remove-output": Removes cell output from HTML. No botton
+    #    "remove-cell": Removes entire cell, input and output. No botton.
+    #
+    # remove-cell: remove entire cell
+    #
+
     # Text to look for in adding tags
     text_search_dict = {
-        "# IMPORTS": "remove-output",  # Remove the whole cell
-        "# GLUE": "hide-input",  # Remove only the input
+        "# IMPORTS": "remove-output",  # Removes the 'module not found' error from output
+        "# GLUE": "remove-cell",  # Removes the cell (input/output) which declares glue variables
         "# HIDE CODE": "hide-input",  # Hide the input w/ a button to show
+        "# REMOVE": "remove-cell",  # Removes cells so marked
     }
 
     # Search through each notebook and look for the text, add a tag if necessary

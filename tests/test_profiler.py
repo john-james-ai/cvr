@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 28th 2021, 1:06:31 am                                                                       #
-# Modified : Thursday, January 20th 2022, 1:32:33 pm                                                                       #
+# Modified : Thursday, January 27th 2022, 7:30:24 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,7 +26,7 @@ from datetime import datetime
 import inspect
 
 from cvr.data.profile import DataProfiler
-from cvr.data import criteo_dtypes
+from cvr.data import criteo_dtypes, criteo_columns
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 logging.basicConfig(level=logging.INFO)
@@ -36,9 +36,10 @@ logger = logging.getLogger(__name__)
 
 class DataProfilerTests:
     def __init__(self):
-        filepath = "tests\\test_data\staged\criteo.csv"
-        self._df = pd.read_csv(filepath, dtype=criteo_dtypes)
-        self._profiler = DataProfiler(self._df)
+        filepath = "tests\data\criteo\staged\criteo_sample.pkl"
+        self._df = pd.read_pickle(filepath)
+        self._profiler = DataProfiler()
+        self._profiler.build(self._df)
 
     def test_summary(self):
         logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
@@ -73,7 +74,7 @@ class DataProfilerTests:
 
         m = self._profiler.missing
         print(m)
-        assert isinstance(m, dict), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        assert isinstance(m, pd.DataFrame), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
@@ -95,24 +96,24 @@ class DataProfilerTests:
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_datatypes(self):
+    def datatypes(self):
         logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         c = self._profiler.datatypes
         print(c)
-        assert isinstance(c, pd.DataFrame), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+        assert isinstance(c, dict), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
 
 if __name__ == "__main__":
     t = DataProfilerTests()
-    t.test_summary
-    t.test_numerics()
-    t.test_categoricals()
-    t.test_missing()
-    t.test_cardinality()
-    t.test_metrics()
-    t.test_datatypes()
+    # t.test_summary
+    # t.test_numerics()
+    # t.test_categoricals()
+    # t.test_missing()
+    # t.test_cardinality()
+    # t.test_metrics()
+    t.datatypes()
 
 #%%

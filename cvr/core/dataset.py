@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Tuesday, January 25th 2022, 11:47:14 pm                                                                       #
+# Modified : Thursday, January 27th 2022, 8:13:26 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -19,6 +19,7 @@
 # ======================================================================================================================== #
 """Dataset Module"""
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from collections import OrderedDict
 from datetime import datetime
 import pandas as pd
@@ -27,10 +28,10 @@ import platform
 import uuid
 
 from cvr.core.asset import Asset
-
 from cvr.visuals.transform import Transformation
 from cvr.data.profile import DataProfiler
 from cvr.visuals.visualize import Visual
+from cvr.visuals.frequency import Frequency
 from cvr.utils.printing import Printer
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -38,8 +39,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------------------------------------------------ #
+@dataclass(frozen=True)
+class DatasetRequest:
+    """Class used to define Dataset order for the Dataset building class."""
+
+    name: str
+    description: str
+    stage: str
+    sample_size: int = None
+    data: pd.DataFrame = pd.DataFrame()
 
 
+# ------------------------------------------------------------------------------------------------------------------------ #
 class AbstractDataset(Asset):
     def __init__(self, name: str, description: str, stage: str, df: pd.DataFrame, profile: DataProfiler) -> None:
         super(AbstractDataset, self).__init__(name, stage)
@@ -86,6 +97,11 @@ class AbstractDataset(Asset):
     @property
     def shape(self) -> str:
         return self._df.shape
+
+    @property
+    def frequency_statistics(self) -> None:
+        """Return descriptive statistics for the categorical value frequencies."""
+        return self._profile.frequency_stats
 
     # ------------------------------------------------------------------------------------------------------------------- #
     #                                  PROFILE PROPERTIES AND METHODS                                                     #
@@ -204,7 +220,7 @@ class AbstractDataset(Asset):
     # ------------------------------------------------------------------------------------------------------------------- #
     def numeric_analysis(self, column: str) -> None:
         """Provides descriptive statistics, distribution plots and transformations."""
-        subtitle = "Distribution of {}".format(column)
+        subtitle = "Numerical of {}".format(column)
         stats = self._df[column].describe().to_frame().T
         stats["skew"] = self._df[column].skew()
         stats["kurtosis"] = self._df[column].kurtosis()
@@ -212,17 +228,30 @@ class AbstractDataset(Asset):
         self._printer.print_dataframe(stats)
 
         self._transformation.explore(self._df, columns=[column])
-        return stats
 
     def categorical_analysis(self, column: str) -> None:
         """Provides descriptive statistics and frequency."""
-        subtitle = "Frequency Analysis of {}".format(column)
+        subtitle = "Categorical Analysis of {}".format(column)
         stats = self._df[column].describe().to_frame().T
         self._printer.print_title(self.description, subtitle)
         self._printer.print_dataframe(stats)
 
         self._visual.countplot(self._df, column=column, threshold=20, title=subtitle)
-        return stats
+
+    def frequency_analysis(self, column: str) -> None:
+        title = "Frequency Analysis: ".format(column)
+        self._printer.print_title(title, column)
+        counts = self._profile.frequency_counts(column=column)
+        plot = Frequency()
+        plot.analysis(
+            df=counts,
+            column=column,
+            col_category="Category Rank",
+            col_freq="Count",
+            col_cum="Cumulative",
+            col_pct_cum="Pct Cum",
+            col_rank="Rank",
+        )
 
 
 # ======================================================================================================================== #
@@ -239,7 +268,7 @@ class AbstractDatasetBuilder(ABC):
 
     def __init__(self) -> None:
 
-        self._dataset_name = None
+        self._name = None
         self._stage = None
         self._description = None
         self._df = None
@@ -249,34 +278,24 @@ class AbstractDatasetBuilder(ABC):
         self._profiler = DataProfiler()
 
     def reset(self) -> None:
-        self._dataset_name = None
+        self._name = None
         self._stage = None
         self._description = None
         self._df = None
         self._dataset = None
-
-    def set_data(self, df: pd.DataFrame) -> None:
-        self._df = df
         return self
 
-    def set_name(self, dataset_name: str) -> None:
-        self._dataset_name = dataset_name
-        return self
-
-    def set_description(self, description: str) -> None:
-        self._description = description
-        return self
-
-    def set_stage(self, stage: str) -> None:
-        self._stage = stage
+    def make_request(self, request: DatasetRequest) -> None:
+        self._name = request.name
+        self._description = request.description
+        self._stage = request.stage
+        self._df = request.data
+        self._sample_size = request.sample_size
         return self
 
     @property
     def dataset(self) -> Dataset:
         return self._dataset
-
-    def create(self) -> None:
-        self._dataset = None
 
     def _build_profile(self) -> None:
         self._profile = DataProfiler()
@@ -285,7 +304,7 @@ class AbstractDatasetBuilder(ABC):
     def build(self) -> None:
         self._build_profile()
         self._dataset = Dataset(
-            name=self._dataset_name,
+            name=self._name,
             description=self._description,
             stage=self._stage,
             df=self._df,

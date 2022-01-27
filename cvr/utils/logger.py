@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 7:48:42 pm                                                                       #
-# Modified : Wednesday, January 26th 2022, 3:03:46 am                                                                      #
+# Modified : Thursday, January 27th 2022, 1:00:17 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,11 +26,11 @@ import logging
 class LoggerFactory:
     """Custom Logger to for each workspace"""
 
-    def get_logger(self, name: str, directory: str, verbose: bool) -> None:
+    def get_logger(self, name: str, directory: str, logging_level: str = "info", verbose: bool = True) -> None:
 
         #  Create log filename and directory
         logfilename = name + ".log"
-        logfilepath = os.path.join(directory, name, logfilename)
+        logfilepath = os.path.join(directory, logfilename)
         os.makedirs(os.path.dirname(logfilepath), exist_ok=True)
 
         # Clear existing loggers
@@ -38,7 +38,12 @@ class LoggerFactory:
 
         # Create logger
         logger = logging.getLogger(name)
-        logger.setLevel(logging.DEBUG)
+
+        # Set Logging Level
+        if logging_level == "debug":
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
         # Set formatters
         file_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

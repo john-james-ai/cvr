@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, December 24th 2021, 12:27:22 pm                                                                       #
-# Modified : Monday, January 24th 2022, 10:03:29 am                                                                        #
+# Modified : Thursday, January 27th 2022, 4:57:47 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -78,7 +78,12 @@ class Printer:
         return anchor
 
     def print_title(self, title, subtitle=None):
-        """Prints title and title separator"""
+        """Prints a title and optional subtitle below and centered.
+
+        Args:
+            title (str): The title to print centered
+            subtitle (str): The subtitle to print centered below the title
+        """
         if not isinstance(self._line_length, (int, float)):
             raise TypeError("Invalid line length. Must be an integer or float.")
         print("\n")
@@ -98,28 +103,29 @@ class Printer:
         print(line)
 
     def print_blank_line(self):
+        """Prints a blank line."""
         print("\n")
 
     def print_dictionary(self, content, title=None):
-        """Pretty prints a title and dictionary."""
+        """Pretty prints a title and dictionary.
+
+        Args:
+            content (dict): The content in dictionary format.
+            title (str): Optional title to print above the data.
+        """
         anchor = self._set_anchor(content)
         if title:
             self.print_title(title)
         for k, v in content.items():
             self._print_line(anchor, k, v)
 
-    def print_dataframe(self, content, title=None):
-        """Prints a table with a heading.
-        Note: To use the tabulate package, content must be a dictionary and
-        each value must be an iterable.
-        Parameters
-        ----------
-        title : str
-            The title to be printed above the table
-        content : dict of lists
-            Dictionary in which the values are iterables.
+    def print_dataframe(self, content, title=None, precision: int = 2, thousands: str = ",", index: bool = False):
+        """Prints a pandas DataFrame
+
+        Args:
+        title (str):  The title to be printed above the table.
+        content (pd.DataFrame):  DataFrame to print.
         """
         if title:
             self.print_title(title)
-        # print(tabulate(content, headers=content.columns, tablefmt="simple"))
         print(content)

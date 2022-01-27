@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 5:11:23 pm                                                                       #
-# Modified : Wednesday, January 26th 2022, 3:28:18 am                                                                      #
+# Modified : Thursday, January 27th 2022, 3:04:20 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -19,6 +19,7 @@
 # ======================================================================================================================== #
 """Base class for workspace assets that get persisted within workspaces."""
 from abc import ABC, abstractmethod
+from datetime import datetime
 import os
 import shutil
 import pandas as pd
@@ -40,8 +41,9 @@ class Asset(ABC):
         self._name = name
         self._stage = stage
         self._version = 0 if version is None else version
-        self._aid = stage + "_" + name
+        date = datetime.now().strftime("%m%d%y")
         self._filepath = None
+        self._aid = stage + "_" + name + "_" + date
 
     @property
     def name(self) -> str:
@@ -191,7 +193,7 @@ class AssetManager(ABC):
                 return filepath[0].lower()
 
     def _set_filepath(self, asset: Asset) -> str:
-        filename = asset.__class__.__name__.lower() + "_" + asset.stage + "_" + asset.name + ".pkl"
+        filename = asset.__class__.__name__.lower() + "_" + asset.stage + "_" + asset.aid + ".pkl"
         asset.filepath = os.path.join(self.asset_directory, asset.stage, filename)
         return asset
 

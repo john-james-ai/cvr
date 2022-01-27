@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Tuesday, January 25th 2022, 11:45:36 pm                                                                       #
+# Modified : Thursday, January 27th 2022, 5:29:52 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -26,6 +26,7 @@ from datetime import datetime, date
 import pandas as pd
 import numpy as np
 import logging
+import inspect
 import requests
 from typing import Union
 import tarfile
@@ -40,8 +41,8 @@ from cvr.data import criteo_columns, criteo_dtypes
 from cvr.core.task import Task, STATUS_CODES
 from cvr.core.workspace import Workspace
 from cvr.utils.config import CriteoConfig
-from cvr.core.pipeline import PipelineCommand
-from cvr.data.dataset import Dataset
+from cvr.core.pipeline import DataPipelineConfig
+from cvr.core.dataset import Dataset
 from cvr.utils.sampling import sample_file
 
 # ------------------------------------------------------------------------------------------------------------------------ #
@@ -53,15 +54,14 @@ class Extract(Task):
 
     """
 
-    def __init__(self, config: dict, chunk_size: int = 10, sample_size: int = None, random_state: int = None) -> None:
+    def __init__(self, datasource_config: dict, chunk_size: int = 20) -> None:
         super(Extract, self).__init__()
-        self._config = config
+        self._datasource_config = datasource_config
         self._chunk_size = chunk_size
-        self._sample_size = sample_size
-        self._random_state = random_state
 
         self._chunk_metrics = OrderedDict()
 
+        self._config = None
         self._filepath_download = None
         self._filepath_raw = None
         self._n_groups = 10
@@ -72,7 +72,7 @@ class Extract(Task):
         return self._chunk_metrics
 
     def _run(self, data: Dataset = None) -> Dataset:
-        """Downloads the data if it doesn't already exist or if self._command.force is True.
+        """Downloads the data if it doesn't already exist or if self._config.force is True.
 
         Args:
             data (Dataset): Dataset created by the previous step.
@@ -80,22 +80,26 @@ class Extract(Task):
         Returns:
             Dataset object
         """
+        self._logger.debug("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         # Format filepaths.
-        self._source = self._config.source
-        self._filepath_download = self._config.destination
-        self._filepath_raw = os.path.join("data", self._command.workspace.name, self._config.filepath_raw)
+        self._source = self._datasource_config.url
+        self._filepath_download = self._datasource_config.destination
+        self._filepath_raw = os.path.join("data", self._config.workspace.name, self._datasource_config.filepath_raw)
 
         # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
 
         # Download the data unless it already exists or force is True
-        if not os.path.exists(self._filepath_download) or self._command.force is True:
-            self._download(source=self._source, destination=self._filepath_download)
+        if not os.path.exists(self._filepath_download) or self._config.force is True:
+            if os.path.exists(self._filepath_download):
+                x = input("Data already downloaded. Do you want to download again and overwrite these data? [y\\n]")
+                if "y" in x.lower():
+                    self._download(source=self._source, destination=self._filepath_download)
 
         # -------------------------------------- DECOMPRESS STEP -------------------------------------- #
 
         # Extract to raw data in the workspace, unless it already exists or force is True
-        if not os.path.exists(self._filepath_raw) or self._command.force is True:
+        if not os.path.exists(self._filepath_raw) or self._config.force is True:
             self._decompress(source=self._filepath_download, destination=self._filepath_raw)
 
         # ----------------------------------------- LOAD STEP ----------------------------------------- #
@@ -109,10 +113,13 @@ class Extract(Task):
 
         # Update status code
         self._status_code = "200"
+
+        self._logger.debug("\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
         return dataset
 
     def _download(self, source: str, destination: str) -> dict:
         """Downloads the data from the site"""
+        self._logger.debug("\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
 
@@ -133,6 +140,8 @@ class Extract(Task):
             else:
                 raise ConnectionError(response)
 
+        self._logger.debug("\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
     def _process_response(self, destination: str, response: requests.Response) -> dict:
         """Processes an HTTP Response
 
@@ -140,6 +149,7 @@ class Extract(Task):
             destination (str): The download destination file path
             response (requests.Response): HTTP Response object.
         """
+        self._logger.debug("\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self._setup_process_response(response)
 
@@ -156,14 +166,14 @@ class Extract(Task):
         group_size = self._group_size(n_chunks)
 
         # Setup data for progress bar
-        if self._command.progress and self._command.verbose:
+        if self._config.progress and self._config.verbose:
             progress_bar = tqdm(total=size_in_bytes, unit="iB", unit_scale=True)
 
         with open(destination, "wb") as fd:
             i = 0
             downloaded = 0
             for chunk in response.iter_content(chunk_size=chunk_size):
-                if self._command.progress and self._command.verbose:
+                if self._config.progress and self._config.verbose:
                     progress_bar.update(len(chunk))
 
                 # Download the chunk and capture transmission metrics.
@@ -173,10 +183,12 @@ class Extract(Task):
 
                 i += 1
 
-        if self._command.progress and self._command.verbose:
+        if self._config.progress and self._config.verbose:
             progress_bar.close()
 
         self._teardown_process_response(destination=destination, i=i, downloaded=downloaded)
+
+        self._logger.debug("\t\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def _group_size(self, n_chunks: int, idx: int = 0) -> int:
         """Computes the number of chunk download iterations in a group for reporting purposes"""
@@ -219,6 +231,8 @@ class Extract(Task):
             i (int): Current iteration
             downloaded (int): Bytes downloaded
         """
+        self._logger.debug("\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         # Anal about indexes
         chunk_number = i + 1
 
@@ -238,7 +252,7 @@ class Extract(Task):
             average_mbps = 0
 
         # If progress is disabled and verbose is True, provide progress every 'check_download' iterations
-        if not self._command.progress and self._command.verbose:
+        if not self._config.progress and self._config.verbose:
             if (chunk_number) % group_size == 0:
                 self._logger.info(
                     "\tChunk #{}: {} percent downloaded at {} Mbps".format(
@@ -252,6 +266,8 @@ class Extract(Task):
             "Pct Downloaded": pct_downloaded,
             "Avg Mbps": average_mbps,
         }
+
+        self._logger.debug("\t\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
         return downloaded
 
     def _teardown_process_response(self, destination: str, i: int, downloaded: int) -> dict:
@@ -262,6 +278,8 @@ class Extract(Task):
             i (int): The current number of chunks downloaded
             downloaded (int): Total bytes downloaded.
         """
+        self._logger.debug("\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         duration = datetime.now() - self._start
         Mb = os.path.getsize(destination) / (1024 * 1024)
         self._summary["Chunk Size (Mb)"] = self._chunk_size
@@ -269,36 +287,44 @@ class Extract(Task):
         self._summary["Downloaded (Mb)"] = round(downloaded / (1024 * 1024), 3)
         self._summary["Mbps"] = round(Mb / duration.total_seconds(), 3)
 
-    def _decompress(self, source: str, destination: str) -> None:
+        self._logger.debug("\t\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
+    def _decompress(self, source: str, destination: str) -> None:
+        """Decompresses the gzip file from source and extracts data to the destination."""
+        self._logger.debug("\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
         self._logger.info("\tDecompression initiated.")
         data = tarfile.open(source)
         with tempfile.TemporaryDirectory() as tempdirname:
             data.extractall(tempdirname)
-            tempfilepath = os.path.join(tempdirname, self._config.filepath_extract)
+            tempfilepath = os.path.join(tempdirname, self._datasource_config.filepath_extract)
 
             self._summary["Size Extracted (Mb)"] = round(int(os.path.getsize(tempfilepath)) / (1024 * 1024), 2)
 
             # If sampling, copy a sample from the temp file, otherwise copy the tempfile in its entirety
-            if self._sample_size is not None:
+            if self._config.dataset_config.sample_size is not None:
                 self._decompress_sample(
                     source=tempfilepath,
                     destination=destination,
-                    nrows=self._sample_size,
-                    random_state=self._random_state,
+                    nrows=self._config.dataset_config.sample_size,
+                    random_state=self._config.random_state,
                 )
             else:
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
                 shutil.copyfile(tempfilepath, destination)
         self._logger.info("\tDecompression Complete! {} Mb Extracted.".format(str(self._summary["Size Extracted (Mb)"])))
+        self._logger.debug("\t\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def _decompress_sample(self, source: str, destination: str, nrows: int, random_state: int = None) -> None:
+        self._logger.debug("\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         """Reads a sample from the source file and stores in destination."""
         self._logger.info("\tSampling dataset initiated.")
         sample_file(source=source, destination=destination, nrows=nrows, random_state=random_state)
         self._summary["Sampled Dataset Observations"] = nrows
         self._summary["Sampled Dataset Size (Mb)"] = round(int(os.path.getsize(destination)) / (1024 * 1024), 2)
         self._logger.info("\tSampling Complete! {} Rows Sampled.".format(str(nrows)))
+
+        self._logger.debug("\t\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
     def _process_non_response(self, response: requests.Response) -> dict:
         """In case non 200 response from HTTP server.
@@ -342,6 +368,8 @@ class TransformETL(Task):
             Dataset object
         """
 
+        self._logger.debug("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         data.set_task_data(self)
 
         # Check Missing before the operation
@@ -360,6 +388,9 @@ class TransformETL(Task):
 
         # Summarize
         self._summary = missing
+
+        self._logger.debug("\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         return dataset
 
     @property
@@ -370,7 +401,7 @@ class TransformETL(Task):
         # Prepare Missing Values Detail
         missing = self._before.to_frame(name="Before").join(self._after.to_frame(name="After"))
 
-        subtitle = "Missing Values Replacement: Dataset {} / {} Stage".format(self._command.name, self._command.stage)
+        subtitle = "Missing Values Replacement: Dataset {} / {} Stage".format(self._config.name, self._config.stage)
         self._print_summary_df(missing, subtitle)
 
         # Prepare missing values summary
@@ -402,15 +433,21 @@ class LoadDataset(Task):
         Returns:
             Dataset object
         """
-        filepath = self._command.workspace.add_dataset(data)
+
+        self._logger.debug("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
+        filepath = self._config.workspace.add_dataset(data)
         # Update status code
         self._status_code = "200"
         self._summary = OrderedDict()
         self._summary["AID"] = data.aid
-        self._summary["Workspace"] = self._command.workspace.name
+        self._summary["Workspace"] = self._config.workspace.name
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
         self._summary["filepath"] = filepath
+
+        self._logger.debug("\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         return data
 
     @property

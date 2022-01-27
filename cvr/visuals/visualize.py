@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 21st 2021, 7:45:33 pm                                                                       #
-# Modified : Tuesday, January 18th 2022, 6:36:56 pm                                                                        #
+# Modified : Thursday, January 27th 2022, 6:42:55 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -337,6 +337,39 @@ class Visual:
             data=df,
             hue=hue,
             orient=orient,
+            palette=self._palette,
+            ax=ax,
+        )
+
+        if title:
+            plt.title(titlelize(title), fontdict={"fontsize": heading_fontsize})
+        plt.tight_layout()
+        plt.show()
+
+    def lineplot(
+        self,
+        df: pd.DataFrame,
+        x: str,
+        y: str,
+        title=None,
+        label_fontsize=16,
+        heading_fontsize=20,
+    ) -> None:
+        """Show the counts of observations in each categorical bin using bars.
+
+        Args:
+            df (pd.DataFrame): Data
+            column (str): column name
+            hue (str): column name by which to subset 'column'
+
+        """
+
+        fig, ax = plt.subplots(figsize=(self._width, self._height))
+
+        sns.lineplot(
+            x=x,
+            y=y,
+            data=df,
             palette=self._palette,
             ax=ax,
         )

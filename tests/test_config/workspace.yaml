@@ -1,8 +1,0 @@
----
-current_workspace: dev
-dev:
-  directory: \tests\test_data\workspaces\dev
-  sample_size: 0.01
-prod:
-  directory: tests\test_data\workspaces\prod
-  sample_size: 1

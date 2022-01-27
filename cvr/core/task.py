@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Tuesday, January 25th 2022, 11:45:35 pm                                                                       #
+# Modified : Thursday, January 27th 2022, 1:16:27 am                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -22,12 +22,13 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from datetime import datetime, date
 import logging
+import inspect
 import pandas as pd
 from typing import Union
 
-from cvr.data.dataset import DatasetBuilder
-from cvr.data.dataset import Dataset
-from cvr.core.pipeline import PipelineCommand
+from cvr.core.dataset import DatasetBuilder, DatasetRequest
+from cvr.core.dataset import Dataset
+from cvr.core.pipeline import PipelineConfig
 from cvr.utils.printing import Printer
 from cvr.utils.format import titlelize
 
@@ -37,7 +38,7 @@ STATUS_CODES = {
     "200": "OK",
     "202": "Accepted",
     "215": "Complete - Not Executed: Output Data Already Exists",
-    "404": "Bad Request",
+    "404": "Bad Config",
     "500": "Internal Server Error. See HTTP Response Code",
 }
 
@@ -60,7 +61,7 @@ class Task(ABC):
         self._status = self._status_code + ": " + self._status_text
 
         self._summary = OrderedDict()
-        self._command = None
+        self._config = None
 
         self._dataset_builder = DatasetBuilder()
         self._printer = Printer()
@@ -114,16 +115,16 @@ class Task(ABC):
         d["Status Time"] = self._end.strftime("%H:%M:%S")
         self._summary.update(d)
 
-    def run(self, command: PipelineCommand, data: Dataset = None) -> Dataset:
+    def run(self, config: PipelineConfig, data: Dataset = None) -> Dataset:
         """Runs the task through delegation to a private member on the subclass
 
         Args:
-            command (PipelineCommand): Container for Pipeline configuration
+            config (PipelineConfig): Container for Pipeline configuration
             data (Dataset): Optional. Input Dataset object. The optional exception is for original sourcing.
 
         """
-        self._command = command
-        self._logger = command.logger
+        self._config = config
+        self._logger = config.logger
 
         self._setup()
         dataset = self._run(data=data)
@@ -135,12 +136,23 @@ class Task(ABC):
         self._status_code = "215"
 
     def _build_dataset(self, data: pd.DataFrame) -> Dataset:
-        dataset_name = self._command.name
-        self._dataset_builder.create()
-        self._dataset_builder.set_data(data)
-        self._dataset_builder.set_name(dataset_name)
-        self._dataset_builder.set_stage(self._command.stage)
-        dataset = self._dataset_builder.build()
+        """Builds datasets for Task objects producing them.
+
+        Args:
+            data pd.DataFrame: The data around which the Dataset object is being built.
+        Returns:
+            Dataset
+        """
+        self._logger.debug("\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
+        # Obtain the data config from the pipeline config object
+        config = self._config.dataset_config
+        request = DatasetRequest(name=config.name, description=config.description, stage=config.stage, data=data)
+        # Reset the dataset builder and pass in the request and build the Dataset object.
+        dataset = self._dataset_builder.reset().make_request(request).build()
+
+        self._logger.debug("\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
         return dataset
 
     @property
@@ -153,7 +165,7 @@ class Task(ABC):
         """Prints the result of the task operation"""
         title = "{} Task Summary".format(self.__class__.__name__)
         if not subtitle:
-            subtitle = "Dataset: {} / {} Stage".format(self._command.name, self._command.stage)
+            subtitle = "Dataset: {} / {} Stage".format(self._config.name, self._config.stage)
         subtitle = titlelize(subtitle)
         self._printer.print_title(title, subtitle)
         self._printer.print_dictionary(summary)
@@ -162,7 +174,7 @@ class Task(ABC):
         """Prints the result of the task operation"""
         title = "{} Task Summary".format(self.__class__.__name__)
         if not subtitle:
-            subtitle = "Dataset: {} / {} Stage".format(self._command.name, self._command.stage)
+            subtitle = "Dataset: {} / {} Stage".format(self._config.name, self._config.stage)
         subtitle = titlelize(subtitle)
         self._printer.print_title(title, subtitle)
         self._printer.print_dataframe(summary)

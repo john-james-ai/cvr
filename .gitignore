@@ -114,6 +114,6 @@ target/
 
 # Mypy cache
 .mypy_cache/
-tests/test_data/criteo/external/Criteo_Conversion_Search/CriteoSearchData
-tests/test_data/criteo/external/Criteo_Conversion_Search/._README.md
-tests/test_data/criteo/external/Criteo_Conversion_Search/README.md
+tests/data/criteo/external/Criteo_Conversion_Search/CriteoSearchData
+tests/data/criteo/external/Criteo_Conversion_Search/._README.md
+tests/data/criteo/external/Criteo_Conversion_Search/README.md

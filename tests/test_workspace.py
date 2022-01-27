@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Monday, December 27th 2021, 4:41:43 am                                                                        #
-# Modified : Wednesday, January 26th 2022, 3:30:37 am                                                                      #
+# Modified : Wednesday, January 26th 2022, 9:20:56 pm                                                                      #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -30,7 +30,7 @@ pd.options.display.float_format = "{:,.2f}".format
 from datetime import datetime
 
 from cvr.core.workspace import Workspace, WorkspaceManager
-from cvr.data.dataset import Dataset, DatasetBuilder
+from cvr.core.dataset import Dataset, DatasetBuilder
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +46,7 @@ class WorkspaceTests:
         shutil.rmtree(WorkspaceTests.directory, ignore_errors=True)
 
         # Get data and create Dataset builder object
-        filepath = "tests\\test_data\criteo\staged\criteo_sample.pkl"
+        filepath = "tests\data\criteo\staged\criteo_sample.pkl"
         self.df = pd.read_pickle(filepath)
 
         self.workspace = None
@@ -121,7 +121,7 @@ class WorkspaceManagerTests:
         self.wsm = WorkspaceManager(test_workspace_base_directory)
         self.wsm.reset()
         # Get data and create Dataset builder object
-        filepath = "tests\\test_data\criteo\staged\criteo_sample.pkl"
+        filepath = "tests\data\criteo\staged\criteo_sample.pkl"
         df = pd.read_pickle(filepath)
         builder = DatasetBuilder()
         self._dataset = (
