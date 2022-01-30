@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 28th 2021, 1:06:31 am                                                                       #
-# Modified : Thursday, January 27th 2022, 7:30:24 am                                                                       #
+# Modified : Saturday, January 29th 2022, 5:26:59 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -25,7 +25,7 @@ import pandas as pd
 from datetime import datetime
 import inspect
 
-from cvr.data.profile import DataProfiler
+from cvr.core.profile import DataProfiler
 from cvr.data import criteo_dtypes, criteo_columns
 
 # ------------------------------------------------------------------------------------------------------------------------ #

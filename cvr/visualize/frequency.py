@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 21st 2021, 7:45:33 pm                                                                       #
-# Modified : Thursday, January 27th 2022, 8:10:19 am                                                                       #
+# Modified : Saturday, January 29th 2022, 4:48:52 pm                                                                       #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -79,6 +79,7 @@ class Frequency:
 
         sns.lineplot(x=col_rank, y=col_pct_cum, palette=self._palette, data=df, ax=axes[1])
         axes[1].set_title("Cumulative Frequency Distribution")
+        axes[1].set(xlabel="Rank", ylabel="Percent of Data")
 
         title = title or "Frequency Distribution Analysis\n{}".format(column)
         fig.suptitle(title, fontsize=heading_fontsize)

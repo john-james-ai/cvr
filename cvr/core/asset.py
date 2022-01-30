@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 5:11:23 pm                                                                       #
-# Modified : Thursday, January 27th 2022, 3:04:20 am                                                                       #
+# Modified : Sunday, January 30th 2022, 4:46:53 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -37,13 +37,16 @@ class Asset(ABC):
         stage (str): The stage in which the asset was created
     """
 
-    def __init__(self, name: str, stage: str, version: int = None) -> None:
+    def __init__(self, aid: str, name: str, stage: str, version: int, filepath: str) -> None:
+        self._aid = aid
         self._name = name
         self._stage = stage
-        self._version = 0 if version is None else version
-        date = datetime.now().strftime("%m%d%y")
-        self._filepath = None
-        self._aid = stage + "_" + name + "_" + date
+        self._version = version
+        self._filepath = filepath
+
+    @property
+    def aid(self) -> str:
+        return self._aid
 
     @property
     def name(self) -> str:
@@ -54,16 +57,12 @@ class Asset(ABC):
         return self._stage
 
     @property
-    def aid(self) -> str:
-        return self._aid
+    def version(self) -> str:
+        return self._version
 
     @property
     def filepath(self) -> str:
         return self._filepath
-
-    @filepath.setter
-    def filepath(self, filepath) -> None:
-        self._filepath = filepath
 
 
 # ======================================================================================================================== #
@@ -132,7 +131,6 @@ class AssetManager(ABC):
             return self._io.exists(filepath)
 
     def _add_asset(self, asset: Asset) -> None:
-        asset = self._set_filepath(asset)
         self._io.save(asset, asset.filepath)
 
     def _add_inventory(self, asset: Asset) -> None:
@@ -191,11 +189,6 @@ class AssetManager(ABC):
                 return filepath.lower()
             else:
                 return filepath[0].lower()
-
-    def _set_filepath(self, asset: Asset) -> str:
-        filename = asset.__class__.__name__.lower() + "_" + asset.stage + "_" + asset.aid + ".pkl"
-        asset.filepath = os.path.join(self.asset_directory, asset.stage, filename)
-        return asset
 
     def print(self) -> None:
         inventory = self._io.load(self.inventory_filepath)

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, December 31st 2021, 1:29:25 pm                                                                        #
-# Modified : Thursday, January 27th 2022, 8:08:50 am                                                                       #
+# Modified : Sunday, January 30th 2022, 10:31:13 am                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -23,10 +23,10 @@ import pytest
 import logging
 import pandas as pd
 import inspect
+import cProfile
 
-from cvr.data.profile import DataProfiler
-from cvr.visuals.visualize import Visual
-from cvr.visuals.frequency import Frequency
+from cvr.visualize.features import CategoricalFeatureVisualizer, NumericFeatureVisualizer
+
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 logging.basicConfig(level=logging.INFO)
@@ -34,48 +34,47 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------------------------------ #
 
 
-class CriteoVisualizationTests:
+class CategoricalFeatureVisualizerTests:
     def __init__(self):
         filepath = "tests\data\criteo\staged\criteo_sample.pkl"
         self._df = pd.read_pickle(filepath)
-        self._profiler = DataProfiler()
-        self._profiler.build(self._df)
-        self._viz = Visual()
+        self._viz = CategoricalFeatureVisualizer()
+        self._column = "product_brand"
 
-    def test_hist(self):
+    def test_plot(self):
 
-        logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-        df = self._df.loc[self._df["sale"] == 1]
-        self._viz.hist(df, "sales_amount")
+        logger.info("\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+
+        self._viz.fit(self._df[self._column])
+        self._viz.plot()
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
-    def test_freq(self):
+
+class NumericFeatureVisualizerTests:
+    def __init__(self):
+        filepath = "tests\data\criteo\staged\criteo_sample.pkl"
+        self._df = pd.read_pickle(filepath)
+        self._viz = NumericFeatureVisualizer()
+        self._column = "sales_amount"
+
+    def test_plot(self):
+
         logger.info("    Started {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-        profiler = DataProfiler()
-        profiler.build(self._df)
-        counts = profiler.frequency_counts(column="product_country")
-        logger.info("Profile Complete")
-        print(counts.head())
-        freq = Frequency()
-        freq.analysis(
-            df=counts,
-            column="product_country",
-            col_category="Category Rank",
-            col_freq="Count",
-            col_cum="Cumulative",
-            col_pct_cum="Pct Cum",
-            col_rank="Rank",
-        )
+
+        self._viz.fit(self._df[self._column])
+        self._viz.plot()
 
         logger.info("\t\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
 
 if __name__ == "__main__":
-    logger.info("Testing CriteoVisualization")
-    t = CriteoVisualizationTests()
-    t.test_freq()
-    logger.info("Completed CriteoVisualization tests")
+    logger.info("Started VisualizerTests")
+    # t = CategoricalFeatureVisualizerTests()
+    # t.test_plot()
+    t = NumericFeatureVisualizerTests()
+    t.test_plot()
+    logger.info("Completed VisualizerTests")
 
 
 #%%

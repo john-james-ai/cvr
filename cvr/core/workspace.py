@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Sunday, January 16th 2022, 4:42:38 am                                                                         #
-# Modified : Wednesday, January 26th 2022, 11:57:40 pm                                                                     #
+# Modified : Sunday, January 30th 2022, 4:59:02 pm                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -27,7 +27,6 @@ import shutil
 from cvr.utils.config import WorkspaceConfig
 from cvr.utils.logger import LoggerFactory
 from cvr.utils.printing import Printer
-from cvr.core.dataset import Dataset
 from cvr.core.asset import Asset, AssetManager, DatasetManager
 from cvr.utils.io import Pickler
 
@@ -69,7 +68,7 @@ class Workspace:
     def dataset_count(self) -> int:
         return self._dataset_manager.count
 
-    def add_dataset(self, dataset: Dataset) -> None:
+    def add_dataset(self, dataset: Asset) -> None:
         """Adds a dataset object to the inventory and persistent storage."""
         filepath = self._dataset_manager.add(dataset)
         self._dataset_count += 1

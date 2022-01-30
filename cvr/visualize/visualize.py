@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Tuesday, December 21st 2021, 7:45:33 pm                                                                       #
-# Modified : Thursday, January 27th 2022, 6:42:55 am                                                                       #
+# Modified : Sunday, January 30th 2022, 5:52:50 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------------------------------ #
 
 
-class Visual:
+class Visual(ABC):
     def __init__(
         self,
         cmap: list = list(RdBu9),
