@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Thursday, January 27th 2022, 1:16:27 am                                                                       #
+# Modified : Sunday, January 30th 2022, 11:04:25 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -147,9 +147,16 @@ class Task(ABC):
 
         # Obtain the data config from the pipeline config object
         config = self._config.dataset_config
-        request = DatasetRequest(name=config.name, description=config.description, stage=config.stage, data=data)
+        request = DatasetRequest(
+            name=config.name,
+            description=config.description,
+            stage=config.stage,
+            data=data,
+            workspace_name=self._config.workspace_name,
+            workspace_directory=self._config.workspace_directory,
+        )
         # Reset the dataset builder and pass in the request and build the Dataset object.
-        dataset = self._dataset_builder.reset().make_request(request).build()
+        dataset = self._dataset_builder.reset().make_request(request).build().dataset
 
         self._logger.debug("\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 

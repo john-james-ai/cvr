@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Thursday, January 27th 2022, 5:29:52 am                                                                       #
+# Modified : Sunday, January 30th 2022, 10:43:10 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -39,7 +39,7 @@ warnings.filterwarnings("ignore")
 
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.core.task import Task, STATUS_CODES
-from cvr.core.workspace import Workspace
+from cvr.core.workspace import Workspace, WorkspaceManager
 from cvr.utils.config import CriteoConfig
 from cvr.core.pipeline import DataPipelineConfig
 from cvr.core.dataset import Dataset
@@ -85,7 +85,7 @@ class Extract(Task):
         # Format filepaths.
         self._source = self._datasource_config.url
         self._filepath_download = self._datasource_config.destination
-        self._filepath_raw = os.path.join("data", self._config.workspace.name, self._datasource_config.filepath_raw)
+        self._filepath_raw = os.path.join("data", self._config.workspace_name, self._datasource_config.filepath_raw)
 
         # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
 
@@ -435,13 +435,14 @@ class LoadDataset(Task):
         """
 
         self._logger.debug("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        workspace = WorkspaceManager().get_workspace(self._config.workspace_name)
 
-        filepath = self._config.workspace.add_dataset(data)
+        filepath = workspace.add_dataset(data)
         # Update status code
         self._status_code = "200"
         self._summary = OrderedDict()
         self._summary["AID"] = data.aid
-        self._summary["Workspace"] = self._config.workspace.name
+        self._summary["Workspace"] = self._config.workspace_name
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
         self._summary["filepath"] = filepath

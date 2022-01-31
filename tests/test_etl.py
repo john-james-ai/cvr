@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 20th 2022, 1:24:43 pm                                                                       #
-# Modified : Thursday, January 27th 2022, 1:36:30 am                                                                       #
+# Modified : Sunday, January 30th 2022, 11:23:10 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -51,13 +51,6 @@ class ETLTests:
         # Get configuration for data source
         self._config = CriteoConfig()
 
-        # Delete downloaded data if testing download functionality.
-        if os.path.exists(self._workspace.directory):
-            x = input("Delete existing download?")
-            if "y" in x:
-                shutil.rmtree(self._workspace.directory)
-                time.sleep(3)
-
     def test_tasks(self):
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
@@ -71,14 +64,24 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         dataset_request = DatasetRequest(
-            name="test_etl_dataset", description="Sample Dataset for ETL Test", stage="test", sample_size=1000
+            name="test_etl_dataset",
+            description="Sample Dataset for ETL Test",
+            stage="test",
+            sample_size=1000,
+            workspace_name=self._workspace.name,
+            workspace_directory=self._workspace.directory,
         )
         data_pipeline_request = DataPipelineRequest(
             name="test_etl_pipeline",
-            stage="test",
-            workspace=self._workspace,
+            description="Testing The Sax Man",
+            stage="mezzanine",
+            workspace_name=self._workspace.name,
+            workspace_directory=self._workspace.directory,
             logging_level="info",
             force=True,
+            verbose=True,
+            progress=False,
+            random_state=602,
             dataset_request=dataset_request,
         )
 
@@ -106,13 +109,13 @@ class ETLTests:
         logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         self.dataset.info()
-        self.dataset.numerics
-        self.dataset.categoricals
-        self.dataset.missing_summary
-        self.dataset.missing
-        self.dataset.cardinality
-        self.dataset.metrics
-        self.dataset.datatypes
+        self.dataset.profile.summary
+        self.dataset.profile.datatypes
+        self.dataset.profile.missing
+        self.dataset.profile.cardinality
+        self.dataset.profile.frequency_stats
+        self.dataset.profile.analyze("product_brand")
+        self.dataset.profile.analyze("sales_amount")
 
         logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 

@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                                                       #
-# Modified : Sunday, January 30th 2022, 5:35:22 pm                                                                         #
+# Modified : Sunday, January 30th 2022, 11:36:16 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -20,14 +20,13 @@
 """Dataset Module"""
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import OrderedDict
 from datetime import datetime
 import pandas as pd
 import logging
 
-from cvr.core.asset import Asset
-from cvr.core.workspace import Workspace
+from cvr.core.asset import Asset, AssetRequest, AssetBuilder, AssetConfig
 from cvr.core.profile import DataProfiler
 from cvr.utils.printing import Printer
 from cvr.utils.format import titlelize
@@ -39,38 +38,34 @@ logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 @dataclass(frozen=True)
-class DatasetRequest:
-    """Class used to define Dataset order for the Dataset building class."""
+class DatasetRequest(AssetRequest):
+    """Dataclass encapsulating the parameters sent to a DatasetBuilder object."""
 
-    name: str
-    description: str
-    stage: str
-    workspace: Workspace
     sample_size: int = None
     data: pd.DataFrame = pd.DataFrame()
 
 
 # ------------------------------------------------------------------------------------------------------------------------ #
+@dataclass
+class DatasetConfig(AssetConfig):
+    sample_size: int = None
+    data: pd.DataFrame = pd.DataFrame()
+    printer: Printer = Printer()
+    profile: DataProfiler = field(init=False)
+
+    def set_profiler(self) -> None:
+        self.profile = DataProfiler(name=self.name, description=self.description, stage=self.stage, data=self.data)
+
+
+# ------------------------------------------------------------------------------------------------------------------------ #
 class AbstractDataset(Asset):
-    def __init__(
-        self,
-        aid: str,
-        name: str,
-        description: str,
-        stage: str,
-        version: int,
-        filepath: str,
-        df: pd.DataFrame,
-        profile: DataProfiler,
-    ) -> None:
-        super(AbstractDataset, self).__init__(aid, name, stage, version, filepath)
+    def __init__(self, config: DatasetConfig) -> None:
+        self._config = config
 
-        self._description = description if description is not None else name + " " + stage
+        self._df = self._config.data
+        self._profile = self._config.profile
 
-        self._df = df
-        self._profile = profile
-
-        self._printer = Printer()
+        self._printer = self._config.printer
 
     def set_task_data(self, task):
         """Injects a task object with the data from this dataset.
@@ -92,11 +87,11 @@ class AbstractDataset(Asset):
     # ------------------------------------------------------------------------------------------------------------------- #
     @property
     def name(self) -> str:
-        return self._name
+        return self._config.name
 
     @property
     def description(self) -> str:
-        return self._description
+        return self._config.description
 
     @property
     def size(self) -> str:
@@ -158,24 +153,14 @@ class AbstractDataset(Asset):
 
 # ======================================================================================================================== #
 class Dataset(AbstractDataset):
-    def __init__(
-        self,
-        aid: str,
-        name: str,
-        description: str,
-        stage: str,
-        version: int,
-        filepath: str,
-        df: pd.DataFrame,
-        profile: DataProfiler,
-    ) -> None:
-        super(Dataset, self).__init__(aid, name, description, stage, version, filepath, df, profile)
+    def __init__(self, config: DatasetConfig) -> None:
+        super(Dataset, self).__init__(config)
 
 
 # ======================================================================================================================== #
 #                                                 DATASET BUILDERS                                                         #
 # ======================================================================================================================== #
-class AbstractDatasetBuilder(ABC):
+class AbstractDatasetBuilder(AssetBuilder):
     """Abstract base class for all Dataset builders."""
 
     def __init__(self) -> None:
@@ -191,75 +176,32 @@ class AbstractDatasetBuilder(ABC):
         self._profiler = None
         return self
 
-    def make_request(self, request: DatasetRequest) -> None:
-        self._request = request
-        return self
-
     @property
     def dataset(self) -> Dataset:
-        return self._dataset
+        dataset = self._dataset
+        self.reset()
+        return dataset
 
     def build(self) -> None:
-        version = self._get_version(name=self._request.name, stage=self._request.stage)
-        aid = self._get_aid(
-            workspace=self._request.workspace,
-            classname="dataset",
-            name=self._request.name,
-            stage=self._request.stage,
-            version=version,
-        )
-        filename = aid + ".pkl"
-        filepath = os.path.join(self._request.workspace.directory, "dataset", self._request.stage, filename)
+        config = self._build_config()
+        self._dataset = Dataset(config)
+        return self
 
-        profiler = DataProfiler(
+    def _build_config(self) -> None:
+        config = DatasetConfig(
             name=self._request.name,
             description=self._request.description,
             stage=self._request.stage,
             data=self._request.data,
+            workspace_name=self._request.workspace_name,
+            workspace_directory=self._request.workspace_directory,
         )
-        self._dataset = Dataset(
-            aid=aid,
-            name=self._request.name,
-            description=self._request.description,
-            stage=self._request.stage,
-            version=version,
-            filepath=filepath,
-            df=self._request.data,
-            profile=profiler,
-        )
-        return self._dataset
-
-    def _get_aid(self, workspace: Workspace, classname: str, name: str, stage: str, version: int) -> str:
-        """Returns the filepath for the asset based upon the workspace, stage, name and version"""
-        return (
-            workspace.name.lower()
-            + "_"
-            + classname.lower()
-            + "_"
-            + stage.lower()
-            + "_"
-            + name.lower()
-            + "_"
-            + "v_"
-            + str(version).zfill(3)
-        )
-
-    def _get_version(self, name: str, stage: str) -> int:
-        self._builder_configfile = os.path.join(self._request.workspace.directory, self.__class__.__name__.lower() + ".pkl")
-        config = self._io.load(self._builder_configfile)
-        if config is None:
-            version = 0
-            config = {}
-            config[name] = {stage: 0}
-        elif name in config.keys():
-            if stage in config[name].keys():
-                config[name][stage] += 1
-                version = config[name][stage]
-            else:
-                config[name][stage] = 0
-                version = config[name][stage]
-        self._io.save(config, self._builder_configfile)
-        return version
+        config.set_config_filepath(classname="dataset")
+        config.set_version()
+        config.set_aid(classname="dataset")
+        config.set_filepath(classname="dataset")
+        config.set_profiler()
+        return config
 
 
 # ======================================================================================================================== #

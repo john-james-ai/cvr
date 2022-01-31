@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                                          #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Saturday, January 22nd 2022, 5:11:23 pm                                                                       #
-# Modified : Sunday, January 30th 2022, 4:46:53 pm                                                                         #
+# Modified : Sunday, January 30th 2022, 11:16:02 pm                                                                        #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -19,6 +19,7 @@
 # ======================================================================================================================== #
 """Base class for workspace assets that get persisted within workspaces."""
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
 import os
 import shutil
@@ -27,6 +28,73 @@ import pandas as pd
 from cvr.utils.io import Pickler
 from cvr.utils.format import titlelize
 from cvr.utils.printing import Printer
+
+# ======================================================================================================================== #
+#                                               ASSET REQUEST                                                              #
+# ======================================================================================================================== #
+@dataclass(frozen=True)
+class AssetRequest(ABC):
+    """Abstract base class that defines the interface for Builder Requests."""
+
+    name: str
+    description: str
+    stage: str
+    workspace_name: str
+    workspace_directory: str
+
+
+@dataclass
+class AssetConfig(ABC):
+    """Asset creation parameters."""
+
+    name: str
+    description: str
+    stage: str
+    workspace_name: str
+    workspace_directory: str
+    io: Pickler = Pickler()
+    aid: str = field(init=False)
+    filepath: str = field(init=False)
+    version: int = field(init=False)
+    config_filepath: str = field(init=False)
+
+    def set_config_filepath(self, classname: str) -> None:
+        self.config_filepath = os.path.join(self.workspace_directory, classname.lower() + "config.pkl")
+
+    def set_version(self) -> None:
+        config = self.io.load(self.config_filepath)
+        if config is None:
+            self.version = 0
+            config = {}
+            config[self.name] = {self.stage: 0}
+        elif self.name in config.keys():
+            if self.stage in config[self.name].keys():
+                config[self.name][self.stage] += 1
+                self.version = config[self.name][self.stage]
+            else:
+                config[self.name][self.stage] = 0
+                self.version = config[self.name][self.stage]
+        self.io.save(config, self.config_filepath)
+
+    def set_aid(self, classname: str) -> None:
+        self.aid = (
+            self.workspace_name.lower()
+            + "_"
+            + classname.lower()
+            + "_"
+            + self.stage.lower()
+            + "_"
+            + self.name.lower()
+            + "_"
+            + "v_"
+            + "_"
+            + str(self.version).zfill(3)
+        )
+
+    def set_filepath(self, classname: str) -> None:
+        filename = self.aid + ".pkl"
+        self.filepath = os.path.join(self.workspace_directory, classname.lower(), self.stage.lower(), filename.lower())
+
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 class Asset(ABC):
@@ -37,39 +105,63 @@ class Asset(ABC):
         stage (str): The stage in which the asset was created
     """
 
-    def __init__(self, aid: str, name: str, stage: str, version: int, filepath: str) -> None:
-        self._aid = aid
-        self._name = name
-        self._stage = stage
-        self._version = version
-        self._filepath = filepath
+    def __init__(self, config: AssetConfig) -> None:
+        self._config = config
 
     @property
     def aid(self) -> str:
-        return self._aid
+        return self._config.aid
 
     @property
     def name(self) -> str:
-        return self._name
+        return self._config.name
 
     @property
     def stage(self) -> str:
-        return self._stage
+        return self._config.stage
 
     @property
     def version(self) -> str:
-        return self._version
+        return self._config.version
 
     @property
     def filepath(self) -> str:
-        return self._filepath
+        return self._config.filepath
+
+    @property
+    def workspace_name(self) -> str:
+        return self._config.workspace_name
+
+
+# ======================================================================================================================== #
+#                                               ASSET BUILDER                                                              #
+# ======================================================================================================================== #
+class AssetBuilder(ABC):
+    """Abstract base class that defines the interface for Builder Requests."""
+
+    def __init__(self) -> None:
+        self._request = None
+        self._io = Pickler
+        self._config = None
+
+    @abstractmethod
+    def reset(self) -> None:
+        pass
+
+    def make_request(self, request: AssetRequest) -> None:
+        self._request = request
+        return self
+
+    @abstractmethod
+    def _build_config(self) -> None:
+        pass
 
 
 # ======================================================================================================================== #
 #                                               ASSET MANAGER                                                              #
 # ======================================================================================================================== #
 class AssetManager(ABC):
-    """Defines the interface inventory management of workspace assets such as Datasets, Models and Pipelines"""
+    """Defines the interface for inventory management of workspace assets such as Datasets, Models and Pipelines"""
 
     def __init__(self, workspace_name: str, workspace_directory: str) -> None:
         self._workspace_name = workspace_name
@@ -107,7 +199,6 @@ class AssetManager(ABC):
         return count
 
     def add(self, asset: Asset) -> None:
-        asset = self._set_filepath(asset)
         self._add_asset(asset)
         self._add_inventory(asset)
         return asset.filepath
