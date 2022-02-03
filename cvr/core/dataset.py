@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                           #
-# Modified : Thursday, February 3rd 2022, 8:25:35 am                           #
+# Modified : Thursday, February 3rd 2022, 12:51:43 pm                          #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
@@ -286,8 +286,10 @@ class Dataset(Asset):
 class DatasetFactory(AssetFactory):
     """Creates Dataset objects."""
 
-    def __init__(self, workspace_directory: str) -> None:
-        super(DatasetFactory, self).__init__(workspace_directory)
+    def __init__(self, workspace_directory: str, logger: logging) -> None:
+        super(DatasetFactory, self).__init__(
+            workspace_directory=workspace_directory, logger=logger
+        )
         self._asset_type = "dataset"
 
     def create(
