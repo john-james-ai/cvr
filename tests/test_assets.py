@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Wednesday, February 2nd 2022, 9:47:17 pm                          #
-# Modified : Thursday, February 3rd 2022, 4:59:03 am                           #
+# Modified : Thursday, February 3rd 2022, 10:36:50 am                          #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
@@ -29,8 +29,8 @@ import shutil
 pd.set_option("display.width", 1000)
 pd.options.display.float_format = "{:,.2f}".format
 
-
-from cvr.core.dataset import Dataset, DatasetRepo
+from cvr.core.asset import AssetRepo
+from cvr.core.dataset import Dataset, DatasetFactory
 
 # ---------------------------------------------------------------------------- #
 logging.basicConfig(level=logging.INFO)
@@ -55,138 +55,121 @@ class AssetTests:
         self.repo = None
 
         filepath = "tests\data\criteo\staged\criteo_sample.pkl"
-        self.df = pd.read_pickle(filepath)
+        self.df = pd.read_pickle(filepath)[0:100]
+        print(self.df.shape)
 
         filepath = "tests\data\\asset_repo"
         shutil.rmtree(filepath, ignore_errors=True)
-        self.repo = DatasetRepo(filepath)
 
-    def test_asset(self):
+        self.factory = DatasetFactory(workspace_directory=filepath)
+        self.repo = AssetRepo(workspace_directory=filepath)
+
+    def test_create_repo(self):
         logger.info(
             "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
-        )
-
-        for name, stage, creator, description in zip(
-            self.names, self.stages, self.creators, self.descriptions
-        ):
-            asset = Dataset(
-                name=name,
-                stage=stage,
-                creator=creator,
-                description=description,
-                data=self.df,
-            )
-            assert asset.asset_type == "dataset", logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.name == name, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.stage == stage, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.description == description, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.creator == creator, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-
-        logger.info(
-            "\tSuccessfully completed {} {}".format(
-                self.__class__.__name__, inspect.stack()[0][3]
-            )
-        )
-
-    def test_repo_add_versions(self):
-        logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
-        )
-
-        name, stage, creator, description, data = (
-            "triple",
-            "back",
-            "hack",
-            "seeing 3s",
-            self.df,
         )
 
         for i in range(3):
-            asset = Dataset(
-                name=name,
-                stage=stage,
-                creator=creator,
-                description=description,
-                data=self.df,
-            )
-            self.repo.add(asset)
 
-            asset2 = self.repo.get(
-                asset_type=self.asset_type, name=name, stage=stage, version=i + 1
-            )
-
-            assert asset.name == asset2.name, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.creator == asset2.creator, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.description == asset2.description, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.stage == asset2.stage, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-            assert asset.version == i + 1, logger.error(
-                "Failure in {}.".format(inspect.stack()[0][3])
-            )
-
-        print(self.repo.get_assets())
-
-        logger.info(
-            "\tSuccessfully completed {} {}".format(
-                self.__class__.__name__, inspect.stack()[0][3]
-            )
-        )
-
-    def test_repo_add_get_assets(self):
-        logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
-        )
-
-        for i in range(5):
             for name, stage, creator, description in zip(
                 self.names, self.stages, self.creators, self.descriptions
             ):
-                asset = Dataset(
+                # Test DatasetFactory
+                dataset = self.factory.create(
                     name=name,
                     stage=stage,
                     creator=creator,
                     description=description,
                     data=self.df,
                 )
-                self.repo.add(asset)
-                asset2 = self.repo.get(
-                    asset_type=self.asset_type, name=name, stage=stage, version=i + 1
+
+                assert dataset.asset_type == "dataset", logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.name == name, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.stage == stage, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.description == description, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.creator == creator, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.version == i + 1, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
                 )
 
-                assert asset.name == asset2.name, logger.error(
+                logger.info(
+                    "\t\tCreated\t{}\t{} of {}.\tCreator: {}\tVersion: {}.".format(
+                        dataset.asset_type,
+                        dataset.name,
+                        dataset.stage,
+                        dataset.creator,
+                        str(dataset.version),
+                    )
+                )
+
+                # Test AssetRepo
+                self.repo.add(dataset)
+
+                # Test Exists
+                assert self.repo.asset_exists(
+                    asset_type=dataset.asset_type,
+                    name=dataset.name,
+                    stage=dataset.stage,
+                    version=dataset.version,
+                ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+
+                logger.info(
+                    "\t\tTested\t{}\t{} of {}.\tCreator: {}\tVersion: {}.".format(
+                        dataset.asset_type,
+                        dataset.name,
+                        dataset.stage,
+                        dataset.creator,
+                        str(dataset.version),
+                    )
+                )
+
+                # Test Reporting
+                ds2 = self.repo.get(
+                    asset_type=dataset.asset_type,
+                    name=dataset.name,
+                    stage=dataset.stage,
+                    version=dataset.version,
+                )
+
+                # Test Get
+                assert dataset.asset_type == ds2.asset_type, logger.error(
                     "Failure in {}.".format(inspect.stack()[0][3])
                 )
-                assert asset.creator == asset2.creator, logger.error(
+                assert dataset.name == ds2.name, logger.error(
                     "Failure in {}.".format(inspect.stack()[0][3])
                 )
-                assert asset.description == asset2.description, logger.error(
+                assert dataset.stage == ds2.stage, logger.error(
                     "Failure in {}.".format(inspect.stack()[0][3])
                 )
-                assert asset.stage == asset2.stage, logger.error(
+                assert dataset.description == ds2.description, logger.error(
                     "Failure in {}.".format(inspect.stack()[0][3])
                 )
-                assert asset.version == i + 1, logger.error(
+                assert dataset.creator == ds2.creator, logger.error(
+                    "Failure in {}.".format(inspect.stack()[0][3])
+                )
+                assert dataset.version == ds2.version, logger.error(
                     "Failure in {}.".format(inspect.stack()[0][3])
                 )
 
-        print(self.repo.get_assets())
+                logger.info(
+                    "\t\tRetrieved\t{}\t{} of {}.\tCreator: {}\tVersion: {}.".format(
+                        dataset.asset_type,
+                        dataset.name,
+                        dataset.stage,
+                        dataset.creator,
+                        str(dataset.version),
+                    )
+                )
 
         logger.info(
             "\tSuccessfully completed {} {}".format(
@@ -194,94 +177,37 @@ class AssetTests:
             )
         )
 
-    def test_repo_delete_most_recent_version(self):
+    def test_delete_repo(self):
         logger.info(
             "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
         )
 
-        for name, stage, creator, description in zip(
-            self.names, self.stages, self.creators, self.descriptions
-        ):
-            self.repo.delete_version(asset_type=self.asset_type, stage=stage, name=name)
+        for name, stage in zip(self.names, self.stages):
 
-            assert self.repo.asset_exists(
-                asset_type=self.asset_type, stage=stage, name=name
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+            for i in range(3):
 
-            for i in range(4):
-                assert self.repo.version_exists(
-                    asset_type=self.asset_type, stage=stage, name=name, version=i + 1
+                # Test DatasetFactory
+                assert self.repo.asset_exists(
+                    asset_type=self.asset_type,
+                    name=name,
+                    stage=stage,
+                    version=i + 1,
                 ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-            assert not self.repo.version_exists(
-                asset_type=self.asset_type, stage=stage, name=name, version=5
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
+            # Delete
+            self.repo.delete_asset(asset_type=self.asset_type, name=name, stage=stage)
 
-        print(self.repo.get_assets())
+            for i in range(5):
 
-        logger.info(
-            "\tSuccessfully completed {} {}".format(
-                self.__class__.__name__, inspect.stack()[0][3]
-            )
-        )
-
-    def test_repo_delete_version(self):
-        logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
-        )
-
-        for name, stage, creator, description in zip(
-            self.names, self.stages, self.creators, self.descriptions
-        ):
-            self.repo.delete_version(
-                asset_type=self.asset_type, stage=stage, name=name, version=1
-            )
-
-            assert self.repo.asset_exists(
-                asset_type=self.asset_type, stage=stage, name=name
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-
-            assert not self.repo.version_exists(
-                asset_type=self.asset_type, stage=stage, name=name, version=1
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-
-            for i in np.arange(1, 4):
-                assert self.repo.version_exists(
-                    asset_type=self.asset_type, stage=stage, name=name, version=i + 1
+                # Test DatasetFactory
+                assert not self.repo.asset_exists(
+                    asset_type=self.asset_type,
+                    name=name,
+                    stage=stage,
+                    version=i + 1,
                 ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
-            assert not self.repo.version_exists(
-                asset_type=self.asset_type, stage=stage, name=name, version=5
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-
-        print(self.repo.get_assets())
-
-        logger.info(
-            "\tSuccessfully completed {} {}".format(
-                self.__class__.__name__, inspect.stack()[0][3]
-            )
-        )
-
-    def test_repo_delete_asset(self):
-        logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
-        )
-
-        for name, stage, creator, description in zip(
-            self.names, self.stages, self.creators, self.descriptions
-        ):
-            self.repo.delete_asset(asset_type=self.asset_type, stage=stage, name=name)
-
-            assert not self.repo.asset_exists(
-                asset_type=self.asset_type, stage=stage, name=name
-            ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-
-            for i in np.arange(5):
-                assert not self.repo.version_exists(
-                    asset_type=self.asset_type, stage=stage, name=name, version=i + 1
-                ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
-
-        print(self.repo.get_assets())
+            print(self.repo.get_assets())
 
         logger.info(
             "\tSuccessfully completed {} {}".format(
@@ -305,12 +231,8 @@ class AssetTests:
 if __name__ == "__main__":
 
     t = AssetTests()
-    t.test_asset()
-    t.test_repo_add_versions()
-    t.test_repo_add_get_assets()
-    t.test_repo_delete_most_recent_version()
-    t.test_repo_delete_version()
-    t.test_repo_delete_asset()
+    t.test_create_repo()
+    t.test_delete_repo()
     t.test_teardown()
 
 #%%
