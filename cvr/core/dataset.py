@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                           #
-# Modified : Thursday, February 3rd 2022, 12:51:43 pm                          #
+# Modified : Thursday, February 3rd 2022, 3:09:23 pm                           #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
@@ -69,13 +69,14 @@ class Dataset(Asset):
         # Column-wise computations
         self._rank_frequency_table = {}
         self._descriptive_statistics = {}
+        self._printer = Printer()
 
     # ------------------------------------------------------------------------ #
     #                             PROPERTIES                                   #
     # ------------------------------------------------------------------------ #
     @property
-    def size(self) -> str:
-        return self._df.memory_usage(deep=True)
+    def size(self) -> float:
+        return self._df.memory_usage(deep=True).sum() / (1024 * 1024)
 
     @property
     def shape(self) -> tuple:
@@ -143,16 +144,16 @@ class Dataset(Asset):
     # ------------------------------------------------------------------------ #
     #                AGGREGATION AND SUMMARIZATION                             #
     # ------------------------------------------------------------------------ #
-    def infoize(self) -> pd.DataFrame:
+    def _infoize(self) -> pd.DataFrame:
         """Prepares dataset information similar to pandas info method."""
         if not self._info:
-            df1 = df.dtypes.to_frame()
-            df2 = df.count(axis=0, numeric_only=False).to_frame()
-            df3 = df.isna().sum().to_frame()
+            df1 = self._df.dtypes.to_frame()
+            df2 = self._df.count(axis=0, numeric_only=False).to_frame()
+            df3 = self._df.isna().sum().to_frame()
             df4 = df3[0] / df2[0] * 100
-            df5 = df.nunique().to_frame()
+            df5 = self._df.nunique().to_frame()
             df6 = df5[0] / df2[0] * 100
-            df7 = df.memory_usage(deep=True).to_frame()
+            df7 = self._df.memory_usage(deep=True).to_frame()
             df8 = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1, join="inner")
             df8.columns = [
                 "Data Type",
@@ -167,7 +168,7 @@ class Dataset(Asset):
         return self._info
 
     # ------------------------------------------------------------------------ #
-    def summarize(self) -> dict:
+    def _summarize(self) -> dict:
         """Renders dataset level statistics."""
         if not self._summary:
             d = {}
@@ -182,7 +183,7 @@ class Dataset(Asset):
             d["Sparsity"] = round(d["Missing Cells"] / d["Cells"] * 100, 2)
             d["Duplicate Rows"] = self._df.duplicated(keep="first").sum()
             d["Duplicate Rows %"] = round(d["Duplicate Rows"] / d["Rows"] * 100, 2)
-            datatypes = self_datatypes()
+            datatypes = self._datatypes()
             d.update(datatypes)
 
     def _datatypes(self) -> dict:
@@ -214,7 +215,7 @@ class Dataset(Asset):
             column (str): Name of a column in the dataset.
         """
         if not self._descriptive_statistics.get(column, None):
-            stats = df[column].describe().to_frame().T
+            stats = self._df[column].describe().to_frame().T
             stats["skew"] = self._df[column].skew(axis=0, skipna=True)
             stats["kurtosis"] = self._df[column].kurtosis(axis=0, skipna=True)
             stats["missing"] = self._df[column].isna().sum()
@@ -236,7 +237,7 @@ class Dataset(Asset):
             column (str): Name of a column in the dataset.
         """
         if not self._descriptive_statistics.get(column, None):
-            stats = df[column].describe().to_frame().T
+            stats = self._df[column].describe().to_frame().T
             stats["missing"] = self._df[column].isna().sum()
             stats["missingness"] = (
                 self._df[column].isna().sum() / len(self._df[column]) * 100
