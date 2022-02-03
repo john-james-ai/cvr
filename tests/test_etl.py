@@ -27,7 +27,7 @@ import inspect
 import time
 import shutil
 
-from cvr.core.workspace import WorkspaceManager
+from cvr.core.workspace import Project
 from cvr.core.pipeline import PipelineRequest
 from cvr.core.dataset import DatasetRequest
 from cvr.data.etl import Extract, TransformETL, LoadDataset
@@ -42,26 +42,36 @@ logger = logging.getLogger(__name__)
 class ETLTests:
     def __init__(self):
         # Create Test Workspace if it doesn't already exist
-        wsm = WorkspaceManager()
+        wsm = Project()
         if wsm.exists("test_etl"):
             self._workspace = wsm.get_workspace("test_etl")
         else:
-            self._workspace = wsm.create_workspace(name="test_etl", description="Test ETL", current=True)
+            self._workspace = wsm.create_workspace(
+                name="test_etl", description="Test ETL", current=True
+            )
 
         # Get configuration for data source
         self._config = CriteoConfig()
 
     def test_tasks(self):
-        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+        )
 
         self._extract = Extract(datasource_config=self._config)
         self._transform = TransformETL(value=[-1, "-1"])
         self._load = LoadDataset()
 
-        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tSuccessfully completed {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
+        )
 
     def test_builder(self):
-        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+        )
 
         dataset_request = DatasetRequest(
             name="test_etl_dataset",
@@ -95,18 +105,30 @@ class ETLTests:
             .pipeline
         )
 
-        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tSuccessfully completed {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
+        )
 
     def test_pipeline(self):
-        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+        )
 
         self.dataset = self._pipeline.run()
         self._pipeline.summary
 
-        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tSuccessfully completed {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
+        )
 
     def data(self):
-        logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+        )
 
         self.dataset.info()
         self.dataset.profile.summary
@@ -117,7 +139,11 @@ class ETLTests:
         self.dataset.profile.analyze("product_brand")
         self.dataset.profile.analyze("sales_amount")
 
-        logger.info("\tSuccessfully completed {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        logger.info(
+            "\tSuccessfully completed {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
+        )
 
 
 if __name__ == "__main__":

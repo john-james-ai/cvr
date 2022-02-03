@@ -3,52 +3,44 @@
 # ============================================================================ #
 # Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
 # Version  : 0.1.0                                                             #
-# File     : \format.py                                                        #
+# File     : \visual.py                                                        #
 # Language : Python 3.7.12                                                     #
 # ---------------------------------------------------------------------------- #
 # Author   : John James                                                        #
 # Email    : john.james.ai.studio@gmail.com                                    #
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
-# Created  : Wednesday, December 29th 2021, 11:58:51 pm                        #
-# Modified : Thursday, February 3rd 2022, 1:59:49 am                           #
+# Created  : Sunday, January 30th 2022, 5:25:46 am                             #
+# Modified : Monday, January 31st 2022, 6:24:57 pm                             #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
 # Copyright: (c) 2022 Bryant St. Labs                                          #
 # ============================================================================ #
-# Datetime format for filenames
-DT_FORMAT_FILENAMES = "%Y%m%d_%H%M%S"
+from abc import ABC, abstractmethod
+from bokeh.palettes import RdBu9
+import pandas as pd
 
+# ---------------------------------------------------------------------------- #
+class Visualizer(ABC):
+    def __init__(
+        self,
+        cmap: list = list(RdBu9),
+        width: int = 12,
+        height: int = 6,
+        label_fontsize: int = 16,
+        heading_fontsize: int = 20,
+        palette: str = "GnBu",
+    ) -> None:
+        self._cmap = cmap
+        self._width = width
+        self._height = height
+        self._label_fontsize = label_fontsize
+        self._heading_fontsize = heading_fontsize
+        self._palette = palette
 
-def proper(x):
-    x = x.replace("_", " ")
-    x = x.capitalize()
-    x = x.replace("Nan", "NaN")
-    return x
+    def fit(self, X: pd.Series):
+        pass
 
-
-def titlelize(x):
-    x = x.replace("_", " ")
-    x = x.title()
-    x = x.replace("Nan", "NaN")
-    return x
-
-
-def titlelize_df(df):
-    new_cols = []
-    cols = df.columns
-    for col in cols:
-        new_cols.append(titlelize(col))
-    df.columns = new_cols
-    return df
-
-
-def s_to_dict(df):
-    s = df.to_dict("list")
-    for k, v in s.items():
-        if isinstance(v, str):
-            s[k] = v[0].split()[0]
-        else:
-            s[k] = v[0]
-    return s
+    def plot(self, X: pd.Series) -> None:
+        pass

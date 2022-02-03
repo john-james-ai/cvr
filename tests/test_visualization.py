@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/xrec                                                                         #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # Created  : Friday, December 31st 2021, 1:29:25 pm                                                                        #
-# Modified : Sunday, January 30th 2022, 10:31:13 am                                                                        #
+# Modified : Monday, January 31st 2022, 3:58:36 am                                                                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
 # ------------------------------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                                                       #
@@ -23,7 +23,6 @@ import pytest
 import logging
 import pandas as pd
 import inspect
-import cProfile
 
 from cvr.visualize.features import CategoricalFeatureVisualizer, NumericFeatureVisualizer
 
@@ -70,8 +69,8 @@ class NumericFeatureVisualizerTests:
 
 if __name__ == "__main__":
     logger.info("Started VisualizerTests")
-    # t = CategoricalFeatureVisualizerTests()
-    # t.test_plot()
+    t = CategoricalFeatureVisualizerTests()
+    t.test_plot()
     t = NumericFeatureVisualizerTests()
     t.test_plot()
     logger.info("Completed VisualizerTests")

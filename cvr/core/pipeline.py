@@ -29,7 +29,7 @@ from typing import Union
 
 from cvr.core.asset import Asset, AssetBuilder, AssetRequest, AssetConfig
 from cvr.core.dataset import DatasetRequest, DatasetConfig
-from cvr.core.workspace import WorkspaceManager, Workspace
+from cvr.core.workspace import Project, Workspace
 from cvr.utils.logger import LoggerFactory
 from cvr.utils.printing import Printer
 
@@ -116,7 +116,9 @@ class Pipeline(Asset):
 
     @property
     def summary(self) -> None:
-        self._config.printer.print_title("Pipeline {} Summary".format(self._config.name))
+        self._config.printer.print_title(
+            "Pipeline {} Summary".format(self._config.name)
+        )
         self._config.printer.print_dataframe(self._result)
 
     def run(self) -> None:

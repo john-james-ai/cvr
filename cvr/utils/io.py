@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Conversion Rate Prediction (CVR)                                                                              #
-# Version  : 0.1.0                                                                                                         #
-# File     : \io.py                                                                                                        #
-# Language : Python 3.7.12                                                                                                 #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/cvr                                                                          #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Tuesday, January 25th 2022, 1:35:16 pm                                                                        #
-# Modified : Tuesday, January 25th 2022, 11:31:50 pm                                                                       #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
+# ============================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
+# Version  : 0.1.0                                                             #
+# File     : \io.py                                                            #
+# Language : Python 3.7.12                                                     #
+# ---------------------------------------------------------------------------- #
+# Author   : John James                                                        #
+# Email    : john.james.ai.studio@gmail.com                                    #
+# URL      : https://github.com/john-james-ai/cvr                              #
+# ---------------------------------------------------------------------------- #
+# Created  : Tuesday, January 25th 2022, 1:35:16 pm                            #
+# Modified : Wednesday, February 2nd 2022, 8:21:20 pm                          #
+# Modifier : John James (john.james.ai.studio@gmail.com)                       #
+# ---------------------------------------------------------------------------- #
+# License  : BSD 3-clause "New" or "Revised" License                           #
+# Copyright: (c) 2022 Bryant St. Labs                                          #
+# ============================================================================ #
 """IO related utilities."""
 import os
 import pickle
 
-# ------------------------------------------------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------- #
 class Pickler:
     """Wraps basic pickle operations."""
 
