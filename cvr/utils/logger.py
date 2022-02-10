@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Saturday, January 22nd 2022, 7:48:42 pm                           #
-# Modified : Thursday, February 3rd 2022, 12:12:12 pm                          #
+# Modified : Friday, February 4th 2022, 9:24:57 pm                             #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
@@ -21,53 +21,50 @@ import os
 import logging
 
 # ---------------------------------------------------------------------------- #
+FORMATTER_CONSOLE = logging.Formatter("%(message)s")
+FORMATTER_FILE = logging.Formatter(
+    "%(asctime)s — %(name)s — %(levelname)s — %(message)s"
+)
+LOGGING_LEVELS = {"info": logging.INFO, "debug": logging.DEBUG}
+# ---------------------------------------------------------------------------- #
 
 
 class LoggerFactory:
-    """Custom Logger to for each workspace"""
-
-    def get_logger(
-        self,
-        name: str,
-        directory: str,
-        logging_level: str = "info",
-        verbose: bool = True,
+    def __init__(
+        self, name: str, directory: str, logging_level: str = "info"
     ) -> None:
+        self._name = name
+        self._directory = directory
+        self._logging_level = logging_level
+        self._logger = None
 
-        #  Create log filename and directory
-        logfilename = name + ".log"
-        logfilepath = os.path.join(directory, logfilename)
-        os.makedirs(os.path.dirname(logfilepath), exist_ok=True)
+    @property
+    def logging_level(self) -> str:
+        return self._logging_level
 
-        # Clear existing loggers
-        logging.root.handlers = []
+    @logging_level.setter
+    def logging_level(self, logging_level: str) -> None:
+        self._logging_level = logging_level
 
-        # Create logger
-        logger = logging.getLogger(name)
+    def _get_console_handler(self) -> logging.StreamHandler:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(FORMATTER_CONSOLE)
+        return console_handler
 
-        # Set Logging Level
-        if logging_level == "debug":
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
-
-        # Set formatters
-        file_format = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    def _get_file_handler(self) -> logging.handlers.TimedRotatingFileHandler:
+        log_filename = self._name + ".log"
+        log_filepath = os.path.join(self._directory, log_filename)
+        os.makedirs(os.path.dirname(log_filepath), exist_ok=True)
+        file_handler = logging.handlers.TimedRotatingFileHandler(
+            filename=log_filepath, when="d", encoding=None, delay=False
         )
-        stream_format = logging.Formatter("%(message)s")
+        file_handler.setFormatter(FORMATTER_FILE)
+        return file_handler
 
-        # Add file handler
-        fh = logging.handlers.TimedRotatingFileHandler(
-            logfilepath, when="d", encoding=None, delay=False
-        )
-        fh.setFormatter(file_format)
-        logger.addHandler(fh)
-
-        # Add console handler if verbose.
-        if verbose:
-            ch = logging.StreamHandler()
-            ch.setFormatter(stream_format)
-            logger.addHandler(ch)
-
+    def get_logger(self) -> logging:
+        """Returns a configured logging object."""
+        logger = logging.getLogger(self._name)
+        logger.setLevel(LOGGING_LEVELS.get(self._logging_level, logging.INFO))
+        logger.addHandler(self._get_console_handler())
+        logger.addHandler(self._get_file_handler())
         return logger

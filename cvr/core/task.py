@@ -1,191 +1,156 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Conversion Rate Prediction (CVR)                                                                              #
-# Version  : 0.1.0                                                                                                         #
-# File     : \task.py                                                                                                      #
-# Language : Python 3.10.1                                                                                                 #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/cvr                                                                          #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Wednesday, January 19th 2022, 5:34:06 pm                                                                      #
-# Modified : Sunday, January 30th 2022, 11:04:25 pm                                                                        #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
-"""Abstract base class for all behavioral classes that performing operations on data."""
+# ============================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
+# Version  : 0.1.0                                                             #
+# File     : \task.py                                                          #
+# Language : Python 3.7.12                                                     #
+# ---------------------------------------------------------------------------- #
+# Author   : John James                                                        #
+# Email    : john.james.ai.studio@gmail.com                                    #
+# URL      : https://github.com/john-james-ai/cvr                              #
+# ---------------------------------------------------------------------------- #
+# Created  : Wednesday, January 19th 2022, 5:34:06 pm                          #
+# Modified : Wednesday, February 9th 2022, 5:39:17 pm                          #
+# Modifier : John James (john.james.ai.studio@gmail.com)                       #
+# ---------------------------------------------------------------------------- #
+# License  : BSD 3-clause "New" or "Revised" License                           #
+# Copyright: (c) 2022 Bryant St. Labs                                          #
+# ============================================================================ #
+"""Abstract base class for pipeline tasks."""
 from abc import ABC, abstractmethod
+from datetime import datetime
+from dataclasses import dataclass, field
 from collections import OrderedDict
-from datetime import datetime, date
-import logging
-import inspect
 import pandas as pd
-from typing import Union
 
-from cvr.core.dataset import DatasetBuilder, DatasetRequest
-from cvr.core.dataset import Dataset
-from cvr.core.pipeline import PipelineConfig
 from cvr.utils.printing import Printer
-from cvr.utils.format import titlelize
+from cvr.core.asset import AssetPassport
 
-# ------------------------------------------------------------------------------------------------------------------------ #
-STATUS_CODES = {
-    "102": "Processing",
-    "200": "OK",
-    "202": "Accepted",
-    "215": "Complete - Not Executed: Output Data Already Exists",
-    "404": "Bad Config",
-    "500": "Internal Server Error. See HTTP Response Code",
-}
+# ---------------------------------------------------------------------------- #
+#                               TASK SUMMARY                                   #
+# ---------------------------------------------------------------------------- #
 
-# ======================================================================================================================== #
+
+@dataclass
+class TaskSummary(ABC):
+    """Summarizes a Task.
+
+    Args:
+        passport (AssetPassport): Identity object
+        start (datetime): start time for event
+        end (datetime): end time for event
+        duration (timedelta): the duration of the event in minutes
+        passed (bool): True if the event passed
+        executed (bool): True if the event was executed. An event
+            may be skipped if its endpoint already exists
+        response (dict): Event specific response
+        result (str): result of the event
+    """
+
+    passport: AssetPassport
+    start: datetime = field(init=False)
+    end: datetime = field(init=False)
+    duration: int = field(init=False)
+    passed: bool = field(default=False)
+    executed: bool = field(default=False)
+    response: dict = field(init=False)
+    result: str = field(default="Ok")
+
+    def __post_init__(self) -> None:
+        self._printer = Printer()
+
+    def start(self) -> None:
+        self.start = datetime.now()
+        self.result = "In-Progress"
+
+    def stop(self) -> None:
+        self.end = datetime.now()
+        self.duration = (self.end - self.start).total_seconds() / 60
+        self.result = "Complete"
+
+    def asdict(self) -> dict:
+        passport = {
+            "aid": self.passport.aid,
+            "name": self.passport.name,
+            "description": self.passport.description,
+            "stage": self.passport.stage,
+        }
+        result = {
+            "Start": self.start,
+            "End": self.end,
+            "Duration": self.duration,
+            "Passed": self.passed,
+            "Executed": self.executed,
+            "Result": self.result,
+        }
+        passport.update(self.response)
+        passport.update(result)
+
+        return passport
+
+    def print(self) -> None:
+        d = self.asdict()
+        self._printer.print_title("Pipeline Event Summary")
+        self._printer.print_dictionary(d)
+
+
+# ---------------------------------------------------------------------------- #
+#                                 TASK                                         #
+# ---------------------------------------------------------------------------- #
+
+
 class Task(ABC):
     """Defines interface for task classes."""
 
-    def __init__(self, **kwargs) -> None:
-        self._name = self.__class__.__name__
-        self._task_seq = None
-
-        self._start = None
-        self._end = None
-        self._duration = None
-
-        self._logger = None
-
-        self._status_code = "202"
-        self._status_text = STATUS_CODES[self._status_code]
-        self._status = self._status_code + ": " + self._status_text
-
-        self._summary = OrderedDict()
+    def __init__(self, passport: AssetPassport, **kwargs) -> None:
+        self._passport = passport
+        self._response = OrderedDict()
+        self._summary = TaskSummary(passport)
         self._config = None
 
-        self._dataset_builder = DatasetBuilder()
-        self._printer = Printer()
+    @property
+    def passport(self):
+        return self._passport
 
     @property
-    def name(self) -> None:
-        return self._name
+    def config(self):
+        return self._config
 
-    @property
-    def task_seq(self) -> int:
-        return self._task_seq
+    @config.setter
+    def config(self, config) -> None:
+        self._config = config
 
-    @task_seq.setter
-    def task_seq(self, task_seq) -> None:
-        self._task_seq = task_seq
-
-    @property
-    def start(self) -> datetime:
-        return self._start
-
-    @property
-    def end(self) -> datetime:
-        return self._end
-
-    @property
-    def duration(self) -> datetime:
-        return self._duration
-
-    @property
-    def status(self) -> str:
-        self._status_text = STATUS_CODES[self._status_code]
-        self._status = self._status_code + ": " + self._status_text
-        return self._status
-
-    def set_data(self, df: pd.DataFrame) -> None:
-        self._df = df
+    def setup(self, **kwargs) -> None:
+        self._summary.begin()
+        self._setup(kwargs)
 
     def _setup(self) -> None:
-        self._start = datetime.now()
-        self._status_code = "102"
+        pass
 
-    def _teardown(self) -> None:
-        self._end = datetime.now()
-        self._duration = self._end - self._start
-        d = OrderedDict()
-        d["Start"] = self._start
-        d["End"] = self._end
-        d["Duration"] = self._duration
-        d["Status"] = self.status
-        d["Status Date"] = date.today()
-        d["Status Time"] = self._end.strftime("%H:%M:%S")
-        self._summary.update(d)
+    def teardown(self, **kwargs) -> None:
+        self._summary.stop()
+        self._teardown(kwargs)
 
-    def run(self, config: PipelineConfig, data: Dataset = None) -> Dataset:
+    def _teardown(self, **kwargs) -> None:
+        pass
+
+    @abstractmethod
+    def run(self, data: pd.DataFrame = None) -> pd.DataFrame:
         """Runs the task through delegation to a private member on the subclass
 
         Args:
-            config (PipelineConfig): Container for Pipeline configuration
-            data (Dataset): Optional. Input Dataset object. The optional exception is for original sourcing.
+            df (pd.DataFrame): Input DataFrame object.
 
-        """
-        self._config = config
-        self._logger = config.logger
-
-        self._setup()
-        dataset = self._run(data=data)
-        self._teardown()
-        return dataset
-
-    def _abort_existence(self) -> None:
-        """Status to report when task not executed because output data already exists."""
-        self._status_code = "215"
-
-    def _build_dataset(self, data: pd.DataFrame) -> Dataset:
-        """Builds datasets for Task objects producing them.
-
-        Args:
-            data pd.DataFrame: The data around which the Dataset object is being built.
         Returns:
-            Dataset
+            df (pd.DataFrame): DataFrame object
+            response (dict): Dictionary containing task response information.
+
         """
-        self._logger.debug("\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-        # Obtain the data config from the pipeline config object
-        config = self._config.dataset_config
-        request = DatasetRequest(
-            name=config.name,
-            description=config.description,
-            stage=config.stage,
-            data=data,
-            workspace_name=self._config.workspace_name,
-            workspace_directory=self._config.workspace_directory,
-        )
-        # Reset the dataset builder and pass in the request and build the Dataset object.
-        dataset = self._dataset_builder.reset().make_request(request).build().dataset
-
-        self._logger.debug("\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
-
-        return dataset
-
-    @property
-    @abstractmethod
-    def summary(self) -> None:
-        """Can print a result or return a summary to the caller."""
         pass
 
-    def _print_summary_dict(self, summary: dict, subtitle: str = None) -> None:
-        """Prints the result of the task operation"""
-        title = "{} Task Summary".format(self.__class__.__name__)
-        if not subtitle:
-            subtitle = "Dataset: {} / {} Stage".format(self._config.name, self._config.stage)
-        subtitle = titlelize(subtitle)
-        self._printer.print_title(title, subtitle)
-        self._printer.print_dictionary(summary)
+    def summary(self) -> TaskSummary:
+        return self._summary
 
-    def _print_summary_df(self, summary: pd.DataFrame, subtitle: str = None) -> None:
-        """Prints the result of the task operation"""
-        title = "{} Task Summary".format(self.__class__.__name__)
-        if not subtitle:
-            subtitle = "Dataset: {} / {} Stage".format(self._config.name, self._config.stage)
-        subtitle = titlelize(subtitle)
-        self._printer.print_title(title, subtitle)
-        self._printer.print_dataframe(summary)
-
-    @abstractmethod
-    def _run(self, data: Dataset = None) -> Dataset:
-        pass
+    def summarize(self) -> None:
+        self._summary.print()

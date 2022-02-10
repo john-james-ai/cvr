@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Explainable Recommendation (XRec)                                                                             #
-# Version  : 0.1.0                                                                                                         #
-# File     : \printing.py                                                                                                  #
-# Language : Python 3.8                                                                                                    #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/xrec                                                                         #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Friday, December 24th 2021, 12:27:22 pm                                                                       #
-# Modified : Thursday, January 27th 2022, 4:57:47 am                                                                       #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2021 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
+# ============================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
+# Version  : 0.1.0                                                             #
+# File     : \printing.py                                                      #
+# Language : Python 3.7.12                                                     #
+# ---------------------------------------------------------------------------- #
+# Author   : John James                                                        #
+# Email    : john.james.ai.studio@gmail.com                                    #
+# URL      : https://github.com/john-james-ai/cvr                              #
+# ---------------------------------------------------------------------------- #
+# Created  : Friday, December 24th 2021, 12:27:22 pm                           #
+# Modified : Friday, February 4th 2022, 3:50:40 pm                             #
+# Modifier : John James (john.james.ai.studio@gmail.com)                       #
+# ---------------------------------------------------------------------------- #
+# License  : BSD 3-clause "New" or "Revised" License                           #
+# Copyright: (c) 2022 Bryant St. Labs                                          #
+# ============================================================================ #
 """ Print utilities."""
 import math
 import statistics
@@ -26,11 +26,11 @@ import pandas as pd
 pd.options.display.float_format = "{:,.2f}".format
 
 
-from tabulate import tabulate
-
 # --------------------------------------------------------------------------- #
 #                                Print                                        #
 # --------------------------------------------------------------------------- #
+
+
 class Printer:
     """Printint behavior."""
 
@@ -45,7 +45,9 @@ class Printer:
     def _compute_budgets(self, anchor):
         """Computes available space on left and right sides."""
         anchor["lhs_budget"] = anchor["pos"] - anchor["lhs_pad"]
-        anchor["rhs_budget"] = self._line_length - anchor["rhs_pad"] - anchor["pos"]
+        anchor["rhs_budget"] = (
+            self._line_length - anchor["rhs_pad"] - anchor["pos"]
+        )
         return anchor
 
     def _set_anchor(self, content):
@@ -65,7 +67,10 @@ class Printer:
         rhs_lens = [len(str(v)) for v in content.values()]
 
         # If all lengths are within budget return self._anchor_pos
-        if max(lhs_lens) <= anchor["lhs_budget"] and max(rhs_lens) <= anchor["rhs_budget"]:
+        if (
+            max(lhs_lens) <= anchor["lhs_budget"]
+            and max(rhs_lens) <= anchor["rhs_budget"]
+        ):
             return anchor
 
         # Otherwise adjust anchor by 1/2 (avg_rhs - avg_lhs)
@@ -89,7 +94,9 @@ class Printer:
         print("\n")
         print(title.center(self._line_length))
         if subtitle:
-            title_separator = self._title_separator * max(len(title), len(subtitle))
+            title_separator = self._title_separator * max(
+                len(title), len(subtitle)
+            )
             print(subtitle.center(self._line_length))
         else:
             title_separator = self._title_separator * len(title)
@@ -97,9 +104,20 @@ class Printer:
         print(title_separator.center(self._line_length))
 
     def _print_line(self, anchor, k, v):
-        v = format(v, ",") if isinstance(v, (int, float, numbers.Integral, numbers.Real)) else str(v)
+        v = (
+            format(v, ",")
+            if isinstance(v, (int, float, numbers.Integral, numbers.Real))
+            else str(v)
+        )
         lhs_pad = " " * int(anchor["pos"] - anchor["lhs_pad"] - len(k))
-        line = lhs_pad + k + " " * anchor["lhs_pad"] + anchor["style"] + " " * anchor["rhs_pad"] + v
+        line = (
+            lhs_pad
+            + k
+            + " " * anchor["lhs_pad"]
+            + anchor["style"]
+            + " " * anchor["rhs_pad"]
+            + v
+        )
         print(line)
 
     def print_blank_line(self):
@@ -119,7 +137,14 @@ class Printer:
         for k, v in content.items():
             self._print_line(anchor, k, v)
 
-    def print_dataframe(self, content, title=None, precision: int = 2, thousands: str = ",", index: bool = False):
+    def print_dataframe(
+        self,
+        content,
+        title=None,
+        precision: int = 2,
+        thousands: str = ",",
+        index: bool = False,
+    ):
         """Prints a pandas DataFrame
 
         Args:

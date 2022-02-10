@@ -11,26 +11,25 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Tuesday, January 18th 2022, 11:09:05 am                           #
-# Modified : Thursday, February 3rd 2022, 3:12:12 pm                           #
+# Modified : Saturday, February 5th 2022, 3:31:38 am                           #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
 # Copyright: (c) 2022 Bryant St. Labs                                          #
 # ============================================================================ #
 #%%
-import os
-import pytest
 import logging
 import inspect
 import shutil
 import pandas as pd
 
+from cvr.core.dataset import Dataset, DatasetRepo
+from cvr.utils.config import AIDConfig
+
+
 pd.options.display.float_format = "{:,.2f}".format
 pd.set_option("display.width", 1000)
-from datetime import datetime
 
-from cvr.core.dataset import Dataset, DatasetFactory
-from cvr.core.workspace import WorkspaceAdmin, Workspace
 
 # ---------------------------------------------------------------------------- #
 logging.basicConfig(level=logging.INFO)
@@ -41,10 +40,8 @@ logger = logging.getLogger(__name__)
 class DatasetTests:
     def __init__(self):
         filepath = "tests\data\criteo\staged\criteo_sample.pkl"
-        workspaces_directory = "tests\data\workspaces"
-        self.workspace_directory = "tests\data\workspaces\\band"
-        shutil.rmtree(workspaces_directory)
-        self.admin = WorkspaceAdmin(workspaces_directory)
+        self._repo_directory = "tests\\test_datasets"
+        shutil.rmtree(self._repo_directory, ignore_errors=True)
 
         self.df = pd.read_pickle(filepath)
         self.asset_type = "dataset"
@@ -52,31 +49,24 @@ class DatasetTests:
         self.stage = "moh"
         self.description = "German's couldn't believe what they were seeing"
         self.creator = "rangers"
+        aid = AIDConfig()
+        aid.reset()
 
     def test_factory(self):
 
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
-        self.workspace = self.admin.create(
-            self.name, self.workspace_directory, self.description
-        )
-        self.logger = self.workspace.logger
-
-        factory = DatasetFactory(self.workspace_directory, self.logger)
-        self.ds = factory.create(
+        repo = DatasetRepo(self._repo_directory)
+        self.ds = repo.create(
             name=self.name,
             stage=self.stage,
             creator=self.creator,
             description=self.description,
             data=self.df,
-        )
-
-        self.logger.info(
-            "Created {} {} Stage: {} Version: {}".format(
-                self.ds.asset_type, self.ds.name, self.ds.stage, self.ds.version
-            )
         )
 
         assert self.ds.name == self.name, logger.error(
@@ -91,7 +81,10 @@ class DatasetTests:
         assert self.ds.creator == self.creator, logger.error(
             "Failure in {}.".format(inspect.stack()[0][3])
         )
-        assert self.ds.version == 1, logger.error(
+        assert self.ds.version == 0, logger.error(
+            "Failure in {}.".format(inspect.stack()[0][3])
+        )
+        assert self.ds.aid == "0000", logger.error(
             "Failure in {}.".format(inspect.stack()[0][3])
         )
         assert isinstance(self.ds, Dataset), logger.error(
@@ -106,7 +99,9 @@ class DatasetTests:
 
     def test_properties(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
         assert self.ds.size > 10, logger.error(
             "Failure in {}.".format(inspect.stack()[0][3])
@@ -122,7 +117,9 @@ class DatasetTests:
 
     def test_data_access(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         self.ds.head(5)
@@ -137,7 +134,9 @@ class DatasetTests:
 
     def test_stats(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         print(self.ds.describe("product_brand"))

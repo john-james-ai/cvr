@@ -8,7 +8,7 @@ __pycache__/
 
 # Data, Notes, and labs
 /data/
-*/lab/
+*/scratch/
 tests/**/*.csv
 /notes/
 *.pkl
@@ -24,11 +24,11 @@ tests/**/*.csv
 /book/_build/
 
 # Datashader
-/datashader-examples/
+*/*/datashader-examples/
 
-# Workspaces and Repositories
-/workspaces/
-/workspaces/Tom/staged/000_tom_staged_tom.pkl
+# Labs and Repositories
+/labs/
+/labs/Tom/staged/000_tom_staged_tom.pkl
 /repositories/
 
 

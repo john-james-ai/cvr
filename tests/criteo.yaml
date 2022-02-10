@@ -4,6 +4,6 @@ url : http://go.criteo.net/criteo-research-search-conversion.tar.gz
 destination: tests/data/criteo/external/criteo.tar.gz
 filepath_extract: Criteo_Conversion_Search/CriteoSearchData
 filepath_raw: tests/data/criteo/raw/criteo2.csv
-workspace: root
+lab: root
 sep : \t
 missing: -1

@@ -1,39 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Explainable Recommendation (XRec)                                                                             #
-# Version  : 0.1.0                                                                                                         #
-# File     : \visualize.py                                                                                                 #
-# Language : Python 3.8                                                                                                    #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/xrec                                                                         #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Tuesday, December 21st 2021, 7:45:33 pm                                                                       #
-# Modified : Sunday, January 30th 2022, 5:52:50 am                                                                         #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2021 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
+# ============================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
+# Version  : 0.1.0                                                             #
+# File     : \visualize.py                                                     #
+# Language : Python 3.7.12                                                     #
+# ---------------------------------------------------------------------------- #
+# Author   : John James                                                        #
+# Email    : john.james.ai.studio@gmail.com                                    #
+# URL      : https://github.com/john-james-ai/cvr                              #
+# ---------------------------------------------------------------------------- #
+# Created  : Tuesday, December 21st 2021, 7:45:33 pm                           #
+# Modified : Thursday, February 3rd 2022, 6:49:55 pm                           #
+# Modifier : John James (john.james.ai.studio@gmail.com)                       #
+# ---------------------------------------------------------------------------- #
+# License  : BSD 3-clause "New" or "Revised" License                           #
+# Copyright: (c) 2022 Bryant St. Labs                                          #
+# ============================================================================ #
 import matplotlib.pyplot as plt
 import logging
 import seaborn as sns
 
 sns.set_style("whitegrid")
 import pandas as pd
-import datashader as ds
-import colorcet as cc
-from bokeh.palettes import RdBu9
 
-# ------------------------------------------------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------- #
 from cvr.utils.format import titlelize
 
-# ------------------------------------------------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------- #
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-# ------------------------------------------------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------------- #
 
 
 class Visual(ABC):
@@ -76,7 +73,9 @@ class Visual(ABC):
 
         df = df[columns]
 
-        fig, axes = plt.subplots(nrows=rows, ncols=cols, sharex=sharex, sharey=sharey, figsize=(hsize, vsize))
+        fig, axes = plt.subplots(
+            nrows=rows, ncols=cols, sharex=sharex, sharey=sharey, figsize=(hsize, vsize)
+        )
         fig.suptitle(title, fontsize=heading_fontsize)
         for i, ax in enumerate(fig.axes):
             sns.histplot(
@@ -120,7 +119,9 @@ class Visual(ABC):
 
         df = df[columns]
 
-        fig, axes = plt.subplots(nrows=rows, ncols=cols, sharex=sharex, sharey=sharey, figsize=(hsize, vsize))
+        fig, axes = plt.subplots(
+            nrows=rows, ncols=cols, sharex=sharex, sharey=sharey, figsize=(hsize, vsize)
+        )
         fig.suptitle(title, fontsize=heading_fontsize)
         for i, ax in enumerate(fig.axes):
             counts = df[columns[i]].value_counts(sort=True).to_frame().reset_index()
@@ -134,7 +135,11 @@ class Visual(ABC):
                     counts = counts.iloc[0:max_horizontal]
                     # Subset the dataframe by the top remaining values in counts
                     df = df.loc[df[columns[i]].isin(counts["Value"])]
-                    logger.info("Output for {} truncated at {} values".format(columns[i], max_horizontal))
+                    logger.info(
+                        "Output for {} truncated at {} values".format(
+                            columns[i], max_horizontal
+                        )
+                    )
 
             # Truncate product title
             if "title" in columns[i]:
@@ -258,8 +263,16 @@ class Visual(ABC):
 
         """
         # Prep Data
-        counts = df[column].value_counts(sort=True, ascending=False).to_frame().reset_index()
-        cumcounts = df[column].value_counts(sort=True, ascending=False).cumsum().to_frame().reset_index()
+        counts = (
+            df[column].value_counts(sort=True, ascending=False).to_frame().reset_index()
+        )
+        cumcounts = (
+            df[column]
+            .value_counts(sort=True, ascending=False)
+            .cumsum()
+            .to_frame()
+            .reset_index()
+        )
         counts.columns = ["Value", "Count"]
         cumcounts.columns = ["Value", "Cumulative"]
 
@@ -286,7 +299,9 @@ class Visual(ABC):
                 plt.title(titlelize(title), fontdict={"fontsize": heading_fontsize})
 
         else:
-            fig, axes = plt.subplots(figsize=(self._width, self._height), nrows=2, ncols=1)
+            fig, axes = plt.subplots(
+                figsize=(self._width, self._height), nrows=2, ncols=1
+            )
             sns.lineplot(
                 x=counts.index,
                 y=counts["Count"],

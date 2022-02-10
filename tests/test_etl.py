@@ -27,11 +27,15 @@ import inspect
 import time
 import shutil
 
-from cvr.core.workspace import Project
-from cvr.core.pipeline import PipelineRequest
+from cvr.core.lab import Project
+from cvr.core.pipeline import PipelineCommand
 from cvr.core.dataset import DatasetRequest
 from cvr.data.etl import Extract, TransformETL, LoadDataset
-from cvr.core.pipeline import DataPipelineBuilder, DataPipeline, DataPipelineRequest
+from cvr.core.pipeline import (
+    DataPipelineBuilder,
+    DataPipeline,
+    DataPipelineCommand,
+)
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.utils.config import CriteoConfig
 
@@ -41,12 +45,12 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------------------------------ #
 class ETLTests:
     def __init__(self):
-        # Create Test Workspace if it doesn't already exist
+        # Create Test Lab if it doesn't already exist
         wsm = Project()
         if wsm.exists("test_etl"):
-            self._workspace = wsm.get_workspace("test_etl")
+            self._lab = wsm.get_lab("test_etl")
         else:
-            self._workspace = wsm.create_workspace(
+            self._lab = wsm.create_lab(
                 name="test_etl", description="Test ETL", current=True
             )
 
@@ -55,7 +59,9 @@ class ETLTests:
 
     def test_tasks(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         self._extract = Extract(datasource_config=self._config)
@@ -70,7 +76,9 @@ class ETLTests:
 
     def test_builder(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         dataset_request = DatasetRequest(
@@ -78,15 +86,15 @@ class ETLTests:
             description="Sample Dataset for ETL Test",
             stage="test",
             sample_size=1000,
-            workspace_name=self._workspace.name,
-            workspace_directory=self._workspace.directory,
+            lab_name=self._lab.name,
+            lab_directory=self._lab.directory,
         )
-        data_pipeline_request = DataPipelineRequest(
+        data_pipeline_request = DataPipelineCommand(
             name="test_etl_pipeline",
             description="Testing The Sax Man",
             stage="mezzanine",
-            workspace_name=self._workspace.name,
-            workspace_directory=self._workspace.directory,
+            lab_name=self._lab.name,
+            lab_directory=self._lab.directory,
             logging_level="info",
             force=True,
             verbose=True,
@@ -113,7 +121,9 @@ class ETLTests:
 
     def test_pipeline(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         self.dataset = self._pipeline.run()
@@ -127,7 +137,9 @@ class ETLTests:
 
     def data(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         self.dataset.info()

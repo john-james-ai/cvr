@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ======================================================================================================================== #
-# Project  : Conversion Rate Prediction (CVR)                                                                              #
-# Version  : 0.1.0                                                                                                         #
-# File     : \etl.py                                                                                                       #
-# Language : Python 3.7.12                                                                                                 #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Author   : John James                                                                                                    #
-# Email    : john.james.ai.studio@gmail.com                                                                                #
-# URL      : https://github.com/john-james-ai/cvr                                                                          #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# Created  : Friday, January 21st 2022, 1:39:53 pm                                                                         #
-# Modified : Sunday, January 30th 2022, 10:43:10 pm                                                                        #
-# Modifier : John James (john.james.ai.studio@gmail.com)                                                                   #
-# ------------------------------------------------------------------------------------------------------------------------ #
-# License  : BSD 3-clause "New" or "Revised" License                                                                       #
-# Copyright: (c) 2022 Bryant St. Labs                                                                                      #
-# ======================================================================================================================== #
+# ============================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
+# Version  : 0.1.0                                                             #
+# File     : \etl.py                                                           #
+# Language : Python 3.7.12                                                     #
+# ---------------------------------------------------------------------------- #
+# Author   : John James                                                        #
+# Email    : john.james.ai.studio@gmail.com                                    #
+# URL      : https://github.com/john-james-ai/cvr                              #
+# ---------------------------------------------------------------------------- #
+# Created  : Friday, January 21st 2022, 1:39:53 pm                             #
+# Modified :                                                                   #
+# Modifier : John James (john.james.ai.studio@gmail.com)                       #
+# ---------------------------------------------------------------------------- #
+# License  : BSD 3-clause "New" or "Revised" License                           #
+# Copyright: (c) 2022 Bryant St. Labs                                          #
+# ============================================================================ #
 """Provides base classes for operators, including pipelines and tasks."""
 from abc import ABC, abstractmethod
 import os
@@ -39,7 +39,7 @@ warnings.filterwarnings("ignore")
 
 from cvr.data import criteo_columns, criteo_dtypes
 from cvr.core.task import Task, STATUS_CODES
-from cvr.core.workspace import Workspace, Project
+from cvr.core.lab import Lab, Project
 from cvr.utils.config import CriteoConfig
 from cvr.core.pipeline import DataPipelineConfig
 from cvr.core.dataset import Dataset
@@ -81,20 +81,27 @@ class Extract(Task):
             Dataset object
         """
         self._logger.debug(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         # Format filepaths.
         self._source = self._datasource_config.url
         self._filepath_download = self._datasource_config.destination
         self._filepath_raw = os.path.join(
-            "data", self._config.workspace_name, self._datasource_config.filepath_raw
+            "data",
+            self._config.lab_name,
+            self._datasource_config.filepath_raw,
         )
 
         # --------------------------------------- DOWNLOAD STEP --------------------------------------- #
 
         # Download the data unless it already exists or force is True
-        if not os.path.exists(self._filepath_download) or self._config.force is True:
+        if (
+            not os.path.exists(self._filepath_download)
+            or self._config.force is True
+        ):
             if os.path.exists(self._filepath_download):
                 x = input(
                     "Data already downloaded. Do you want to download again and overwrite these data? [y\\n]"
@@ -106,7 +113,7 @@ class Extract(Task):
 
         # -------------------------------------- DECOMPRESS STEP -------------------------------------- #
 
-        # Extract to raw data in the workspace, unless it already exists or force is True
+        # Extract to raw data in the lab, unless it already exists or force is True
         if not os.path.exists(self._filepath_raw) or self._config.force is True:
             self._decompress(
                 source=self._filepath_download, destination=self._filepath_raw
@@ -130,14 +137,18 @@ class Extract(Task):
         self._status_code = "200"
 
         self._logger.debug(
-            "\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tCompleted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
         return dataset
 
     def _download(self, source: str, destination: str) -> dict:
         """Downloads the data from the site"""
         self._logger.debug(
-            "\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -148,7 +159,9 @@ class Extract(Task):
         with requests.get(source, stream=True) as response:
             self._status_code = response.status_code
             if response.status_code == 200:
-                self._process_response(destination=destination, response=response)
+                self._process_response(
+                    destination=destination, response=response
+                )
                 self._logger.info(
                     "\n\tDownload complete! {} Mb downloaded in {} {} Mb chunks.".format(
                         str(self._summary["Downloaded (Mb)"]),
@@ -160,10 +173,14 @@ class Extract(Task):
                 raise ConnectionError(response)
 
         self._logger.debug(
-            "\t\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\tCompleted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
-    def _process_response(self, destination: str, response: requests.Response) -> dict:
+    def _process_response(
+        self, destination: str, response: requests.Response
+    ) -> dict:
         """Processes an HTTP Response
 
         Args:
@@ -171,7 +188,9 @@ class Extract(Task):
             response (requests.Response): HTTP Response object.
         """
         self._logger.debug(
-            "\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         self._setup_process_response(response)
@@ -245,7 +264,8 @@ class Extract(Task):
             "\tDownloading {} Mb in {} Mb chunks\n".format(
                 str(
                     round(
-                        int(response.headers.get("Content-Length", 0)) / (1024 * 1024),
+                        int(response.headers.get("Content-Length", 0))
+                        / (1024 * 1024),
                         2,
                     )
                 ),
@@ -256,7 +276,9 @@ class Extract(Task):
 
         self._summary["Status Code"] = response.status_code
         self._summary["Content Type"] = response.headers.get("Content-Type", "")
-        self._summary["Last Modified"] = response.headers.get("Last-Modified", "")
+        self._summary["Last Modified"] = response.headers.get(
+            "Last-Modified", ""
+        )
         self._summary["Content Length (Mb)"] = round(
             int(response.headers.get("Content-Length", 0)) / (1024 * 1024), 3
         )
@@ -280,7 +302,9 @@ class Extract(Task):
             downloaded (int): Bytes downloaded
         """
         self._logger.debug(
-            "\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         # Anal about indexes
@@ -297,9 +321,13 @@ class Extract(Task):
         # average speed to 0
         try:
             pct_downloaded = (
-                downloaded / int(response.headers.get("Content-Length", 0)) * 100
+                downloaded
+                / int(response.headers.get("Content-Length", 0))
+                * 100
             )
-            average_mbps = int((downloaded / duration.total_seconds()) / (1024 * 1024))
+            average_mbps = int(
+                (downloaded / duration.total_seconds()) / (1024 * 1024)
+            )
         except ZeroDivisionError as e:
             average_mbps = 0
 
@@ -339,7 +367,9 @@ class Extract(Task):
             downloaded (int): Total bytes downloaded.
         """
         self._logger.debug(
-            "\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         duration = datetime.now() - self._start
@@ -358,7 +388,9 @@ class Extract(Task):
     def _decompress(self, source: str, destination: str) -> None:
         """Decompresses the gzip file from source and extracts data to the destination."""
         self._logger.debug(
-            "\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
         self._logger.info("\tDecompression initiated.")
         data = tarfile.open(source)
@@ -395,10 +427,16 @@ class Extract(Task):
         )
 
     def _decompress_sample(
-        self, source: str, destination: str, nrows: int, random_state: int = None
+        self,
+        source: str,
+        destination: str,
+        nrows: int,
+        random_state: int = None,
     ) -> None:
         self._logger.debug(
-            "\t\t\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\t\t\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         """Reads a sample from the source file and stores in destination."""
@@ -413,7 +451,9 @@ class Extract(Task):
         self._summary["Sampled Dataset Size (Mb)"] = round(
             int(os.path.getsize(destination)) / (1024 * 1024), 2
         )
-        self._logger.info("\tSampling Complete! {} Rows Sampled.".format(str(nrows)))
+        self._logger.info(
+            "\tSampling Complete! {} Rows Sampled.".format(str(nrows))
+        )
 
         self._logger.debug(
             "\t\t\tCompleted {} {}".format(
@@ -464,7 +504,9 @@ class TransformETL(Task):
         """
 
         self._logger.debug(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         data.set_data(self)
@@ -487,7 +529,9 @@ class TransformETL(Task):
         self._summary = missing
 
         self._logger.debug(
-            "\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tCompleted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         return dataset
@@ -525,13 +569,13 @@ class TransformETL(Task):
 
 # ------------------------------------------------------------------------------------------------------------------------ #
 class LoadDataset(Task):
-    """Loads the dataset into the current workspace."""
+    """Loads the dataset into the current lab."""
 
     def __init__(self) -> None:
         super(LoadDataset, self).__init__()
 
     def _run(self, data: Dataset = None) -> Dataset:
-        """Add the dataset to the current workspace
+        """Add the dataset to the current lab
 
         Args:
             data (Dataset): Dataset created by the previous step.
@@ -541,22 +585,26 @@ class LoadDataset(Task):
         """
 
         self._logger.debug(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
-        workspace = Project().get_workspace(self._config.workspace_name)
+        lab = Project().get_lab(self._config.lab_name)
 
-        filepath = workspace.add_dataset(data)
+        filepath = lab.add_dataset(data)
         # Update status code
         self._status_code = "200"
         self._summary = OrderedDict()
         self._summary["AID"] = data.aid
-        self._summary["Workspace"] = self._config.workspace_name
+        self._summary["Lab"] = self._config.lab_name
         self._summary["Dataset Name"] = data.name
         self._summary["Stage"] = data.stage
         self._summary["filepath"] = filepath
 
         self._logger.debug(
-            "\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tCompleted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         return data

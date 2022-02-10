@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Wednesday, February 2nd 2022, 9:47:17 pm                          #
-# Modified : Thursday, February 3rd 2022, 10:36:50 am                          #
+# Modified : Wednesday, February 9th 2022, 11:40:12 am                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
@@ -29,7 +29,7 @@ import shutil
 pd.set_option("display.width", 1000)
 pd.options.display.float_format = "{:,.2f}".format
 
-from cvr.core.asset import AssetRepo
+from cvr.core.asset import DatasetRepo
 from cvr.core.dataset import Dataset, DatasetFactory
 
 # ---------------------------------------------------------------------------- #
@@ -58,15 +58,17 @@ class AssetTests:
         self.df = pd.read_pickle(filepath)[0:100]
         print(self.df.shape)
 
-        filepath = "tests\data\\asset_repo"
+        filepath = "tests\data\\dataset_repo"
         shutil.rmtree(filepath, ignore_errors=True)
 
-        self.factory = DatasetFactory(workspace_directory=filepath)
-        self.repo = AssetRepo(workspace_directory=filepath)
+        self.factory = DatasetFactory(lab_directory=filepath)
+        self.repo = DatasetRepo(lab_directory=filepath)
 
     def test_create_repo(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         for i in range(3):
@@ -112,11 +114,11 @@ class AssetTests:
                     )
                 )
 
-                # Test AssetRepo
+                # Test DatasetRepo
                 self.repo.add(dataset)
 
                 # Test Exists
-                assert self.repo.asset_exists(
+                assert self.repo.exists(
                     asset_type=dataset.asset_type,
                     name=dataset.name,
                     stage=dataset.stage,
@@ -179,7 +181,9 @@ class AssetTests:
 
     def test_delete_repo(self):
         logger.info(
-            "\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
+            "\tStarted {} {}".format(
+                self.__class__.__name__, inspect.stack()[0][3]
+            )
         )
 
         for name, stage in zip(self.names, self.stages):
@@ -187,7 +191,7 @@ class AssetTests:
             for i in range(3):
 
                 # Test DatasetFactory
-                assert self.repo.asset_exists(
+                assert self.repo.exists(
                     asset_type=self.asset_type,
                     name=name,
                     stage=stage,
@@ -195,12 +199,12 @@ class AssetTests:
                 ), logger.error("Failure in {}.".format(inspect.stack()[0][3]))
 
             # Delete
-            self.repo.delete_asset(asset_type=self.asset_type, name=name, stage=stage)
+            self.repo.delete(asset_type=self.asset_type, name=name, stage=stage)
 
             for i in range(5):
 
                 # Test DatasetFactory
-                assert not self.repo.asset_exists(
+                assert not self.repo.exists(
                     asset_type=self.asset_type,
                     name=name,
                     stage=stage,
@@ -216,7 +220,7 @@ class AssetTests:
         )
 
     def test_teardown(self):
-        filepath = "tests\data\\asset_repo"
+        filepath = "tests\data\\dataset_repo"
         shutil.rmtree(filepath)
         self.end = datetime.now()
         self.duration = self.end - self.start
