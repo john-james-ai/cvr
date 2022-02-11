@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, February 10th 2022, 1:12:03 am                                              #
-# Modified : Thursday, February 10th 2022, 8:18:34 pm                                              #
+# Modified : Thursday, February 10th 2022, 8:54:51 pm                                              #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                               #
@@ -44,7 +44,7 @@ class DatasetReader(Task):
     def run(self, passport: AssetPassport) -> Dataset:
 
         self.setup()
-        self._logger.info("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
+        self._logger.debug("\tStarted {} {}".format(self.__class__.__name__, inspect.stack()[0][3]))
 
         dataset = self._config.dataset_repo.get(
             asset_type=passport.asset_type,
@@ -52,7 +52,7 @@ class DatasetReader(Task):
             name=passport.name,
         )
 
-        self._logger.info(
+        self._logger.debug(
             "\tCompleted {} {}".format(self.__class__.__name__, inspect.stack()[0][3])
         )
 

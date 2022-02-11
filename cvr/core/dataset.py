@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Created  : Thursday, January 13th 2022, 2:22:59 am                                               #
-# Modified : Thursday, February 10th 2022, 5:33:38 pm                                              #
+# Modified : Thursday, February 10th 2022, 8:53:04 pm                                              #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                               #
@@ -123,9 +123,9 @@ class Dataset(Asset):
             df1 = self._df.dtypes.to_frame()
             df2 = self._df.count(axis=0, numeric_only=False).to_frame()
             df3 = self._df.isna().sum().to_frame()
-            df4 = df3[0] / df2[0] * 100
+            df4 = df3[0] / len(self._df) * 100
             df5 = self._df.nunique().to_frame()
-            df6 = df5[0] / df2[0] * 100
+            df6 = df5[0] / len(self._df) * 100
             df7 = self._df.memory_usage(deep=True).to_frame()
             df8 = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1, join="inner")
             df8.columns = [

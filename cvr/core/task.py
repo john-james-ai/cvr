@@ -11,7 +11,7 @@
 # URL      : https://github.com/john-james-ai/cvr                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Created  : Wednesday, January 19th 2022, 5:34:06 pm                                              #
-# Modified : Thursday, February 10th 2022, 7:49:19 pm                                              #
+# Modified : Thursday, February 10th 2022, 9:28:37 pm                                              #
 # Modifier : John James (john.james.ai.studio@gmail.com)                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License  : BSD 3-clause "New" or "Revised" License                                               #
@@ -84,8 +84,18 @@ class TaskResponse(ABC):
         self.end = datetime.now()
         self.duration = self.end - self.start
 
+    def __post_init__(self) -> None:
+        self._printer = Printer()
+
+    def todict(self) -> dict:
+        d = {"Start": self.start, "End": self.end, "Duration": self.duration}
+        return d
+
     def print(self) -> None:
-        pass
+        title = "Task Response"
+        self._printer.print_title(title)
+        d = self.todict()
+        self._printer.print_dictionary(d)
 
 
 # ---------------------------------------------------------------------------- #
