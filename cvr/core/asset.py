@@ -1,41 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# ============================================================================ #
-# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
-# Version  : 0.1.0                                                             #
-# File     : \asset.py                                                         #
-# Language : Python 3.7.12                                                     #
-# ---------------------------------------------------------------------------- #
-# Author   : John James                                                        #
-# Email    : john.james.ai.studio@gmail.com                                    #
-# URL      : https://github.com/john-james-ai/cvr                              #
-# ---------------------------------------------------------------------------- #
-# Created  : Saturday, January 22nd 2022, 5:11:23 pm                           #
-# Modified : Wednesday, February 9th 2022, 11:56:48 pm                         #
-# Modifier : John James (john.james.ai.studio@gmail.com)                       #
-# ---------------------------------------------------------------------------- #
-# License  : BSD 3-clause "New" or "Revised" License                           #
-# Copyright: (c) 2022 Bryant St. Labs                                          #
-# ============================================================================ #
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-# ============================================================================ #
-# Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
-# Version  : 0.1.0                                                             #
-# File     : \asset.py                                                         #
-# Language : Python 3.7.12                                                     #
-# ---------------------------------------------------------------------------- #
-# Author   : John James                                                        #
-# Email    : john.james.ai.studio@gmail.com                                    #
-# URL      : https://github.com/john-james-ai/cvr                              #
-# ---------------------------------------------------------------------------- #
-# Created  : Saturday, January 22nd 2022, 5:11:23 pm                           #
-# Modified : Wednesday, February 9th 2022, 5:33:15 pm                          #
-# Modifier : John James (john.james.ai.studio@gmail.com)                       #
-# ---------------------------------------------------------------------------- #
-# License  : BSD 3-clause "New" or "Revised" License                           #
-# Copyright: (c) 2022 Bryant St. Labs                                          #
-# ============================================================================ #
+# ================================================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                                    #
+# Version  : 0.1.0                                                                                 #
+# File     : \asset.py                                                                             #
+# Language : Python 3.7.12                                                                         #
+# ------------------------------------------------------------------------------------------------ #
+# Author   : John James                                                                            #
+# Email    : john.james.ai.studio@gmail.com                                                        #
+# URL      : https://github.com/john-james-ai/cvr                                                  #
+# ------------------------------------------------------------------------------------------------ #
+# Created  : Saturday, January 22nd 2022, 5:11:23 pm                                               #
+# Modified : Thursday, February 10th 2022, 7:48:22 pm                                              #
+# Modifier : John James (john.james.ai.studio@gmail.com)                                           #
+# ------------------------------------------------------------------------------------------------ #
+# License  : BSD 3-clause "New" or "Revised" License                                               #
+# Copyright: (c) 2022 Bryant St. Labs                                                              #
+# ================================================================================================ #
+
 """Base class for lab assets that get persisted within labs."""
 from abc import ABC, abstractmethod
 import os
@@ -62,8 +44,8 @@ class AssetPassport:
     name: str
     description: str
     stage: str
-    version: int = field(init=False)
-    filepath: str = field(init=False)
+    version: int = field(default="0000")
+    filepath: str = field(default=None)
     creator: str = field(default="cvr")
     created: datetime = field(default=datetime.now())
     stamps: OrderedDict() = field(default_factory=dict)
@@ -103,7 +85,8 @@ class AssetPassport:
             "version": self.version,
             "filepath": self.filepath,
         }
-        self._printer.print_title("Asset Passport", titlelize(self.description))
+        title = self.name + " " + self.asset_type
+        self._printer.print_title(titlelize(title), titlelize(self.description))
         self._printer.print_dictionary(d)
         if len(self.stamps) > 0:
             for stamp in self.stamps.items():
@@ -212,9 +195,7 @@ class AssetRepo(ABC):
         self._io.save(asset=asset, filepath=asset.filepath)
 
     # ------------------------------------------------------------------------ #
-    def get(
-        self, asset_type: str, stage: str, name: str, version: int = None
-    ) -> Asset:
+    def get(self, asset_type: str, stage: str, name: str, version: int = None) -> Asset:
         """Retrieves an asset by asset_type, stage, name, and optional version
 
         Args:
@@ -226,9 +207,7 @@ class AssetRepo(ABC):
             asset (Asset): Asset being requested.
         """
         if version:
-            registry = self._search_registry_by_version(
-                asset_type, name, stage, version
-            )
+            registry = self._search_registry_by_version(asset_type, name, stage, version)
         else:
             registry = self._search_registry_by_asset(asset_type, name, stage)
 
@@ -332,13 +311,11 @@ class AssetRepo(ABC):
 
     # ------------------------------------------------------------------------ #
     @abstractmethod
-    def create(
-        self, name: str, description: str, stage: str, creator: str, **kwargs
-    ) -> Asset:
+    def create(self, name: str, description: str, stage: str, creator: str, **kwargs) -> Asset:
         pass
 
     # ------------------------------------------------------------------------ #
-    def _create_filepath(self, asset: Asset) -> str:
+    def _create_filepath(self, asset: Asset, fileext=".pkl") -> str:
         """Forms the filepath for an asset."""
         filename = (
             asset.passport.stage
@@ -348,7 +325,7 @@ class AssetRepo(ABC):
             + asset.passport.name
             + "_v"
             + str(asset.passport.version).zfill(3)
-            + ".pkl"
+            + fileext
         )
         return os.path.join(self._directory, filename)
 
@@ -392,9 +369,7 @@ class AssetRepo(ABC):
             return None
 
     # ------------------------------------------------------------------------ #
-    def _search_registry_by_asset(
-        self, asset_type: str, name: str, stage: str
-    ) -> pd.DataFrame:
+    def _search_registry_by_asset(self, asset_type: str, name: str, stage: str) -> pd.DataFrame:
         """Returns latest version of asset."""
 
         registry = self._io.load(self._registry)

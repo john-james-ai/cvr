@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                                    #
+# Version  : 0.1.0                                                                                 #
+# File     : \pipeline.py                                                                          #
+# Language : Python 3.7.12                                                                         #
+# ------------------------------------------------------------------------------------------------ #
+# Author   : John James                                                                            #
+# Email    : john.james.ai.studio@gmail.com                                                        #
+# URL      : https://github.com/john-james-ai/cvr                                                  #
+# ------------------------------------------------------------------------------------------------ #
+# Created  : Wednesday, January 19th 2022, 5:46:57 pm                                              #
+# Modified :                                                                                       #
+# Modifier : John James (john.james.ai.studio@gmail.com)                                           #
+# ------------------------------------------------------------------------------------------------ #
+# License  : BSD 3-clause "New" or "Revised" License                                               #
+# Copyright: (c) 2022 Bryant St. Labs                                                              #
+# ================================================================================================ #
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 # ============================================================================ #
 # Project  : Deep Learning for Conversion Rate Prediction (CVR)                #
 # Version  : 0.1.0                                                             #
@@ -147,9 +166,7 @@ class Pipeline(Asset):
         tasks (list): List of task objects
     """
 
-    def __init__(
-        self, passport: AssetPassport, config: PipelineConfig, tasks: list
-    ) -> None:
+    def __init__(self, passport: AssetPassport, config: PipelineConfig, tasks: list) -> None:
         self._passport = passport
         self._tasks = tasks
         self._config = config
@@ -188,12 +205,8 @@ class DataPipeline(Pipeline):
         tasks (list): List of task objects
     """
 
-    def __init__(
-        self, passport: AssetPassport, config: PipelineConfig, tasks: list
-    ) -> None:
-        super(DataPipeline, self).__init__(
-            passport=passport, config=config, tasks=tasks
-        )
+    def __init__(self, passport: AssetPassport, config: PipelineConfig, tasks: list) -> None:
+        super(DataPipeline, self).__init__(passport=passport, config=config, tasks=tasks)
         self._data = None
 
     def run(self) -> Union[pd.DataFrame, dict, Dataset]:
@@ -201,6 +214,7 @@ class DataPipeline(Pipeline):
         for task in self._tasks:
             self._data = task.run(self._data)
             self._task_summaries[task.__class__.__name__.lower()] = task.summary
+            task.summarize()
 
         self.teardown()
         return self._data

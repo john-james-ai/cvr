@@ -11,12 +11,13 @@
 # URL      : https://github.com/john-james-ai/cvr                              #
 # ---------------------------------------------------------------------------- #
 # Created  : Wednesday, December 29th 2021, 11:58:51 pm                        #
-# Modified : Thursday, February 3rd 2022, 1:59:49 am                           #
+# Modified : Thursday, February 10th 2022, 11:16:59 am                         #
 # Modifier : John James (john.james.ai.studio@gmail.com)                       #
 # ---------------------------------------------------------------------------- #
 # License  : BSD 3-clause "New" or "Revised" License                           #
 # Copyright: (c) 2022 Bryant St. Labs                                          #
 # ============================================================================ #
+
 # Datetime format for filenames
 DT_FORMAT_FILENAMES = "%Y%m%d_%H%M%S"
 

@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project  : Deep Learning for Conversion Rate Prediction (CVR)                                    #
+# Version  : 0.1.0                                                                                 #
+# File     : \__init__.py                                                                          #
+# Language : Python 3.7.12                                                                         #
+# ------------------------------------------------------------------------------------------------ #
+# Author   : John James                                                                            #
+# Email    : john.james.ai.studio@gmail.com                                                        #
+# URL      : https://github.com/john-james-ai/cvr                                                  #
+# ------------------------------------------------------------------------------------------------ #
+# Created  : Tuesday, December 21st 2021, 7:45:33 pm                                               #
+# Modified : Thursday, February 10th 2022, 5:13:24 pm                                              #
+# Modifier : John James (john.james.ai.studio@gmail.com)                                           #
+# ------------------------------------------------------------------------------------------------ #
+# License  : BSD 3-clause "New" or "Revised" License                                               #
+# Copyright: (c) 2022 Bryant St. Labs                                                              #
+# ================================================================================================ #
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 # ======================================================================================================================== #
 # Project  : Explainable Recommendation (XRec)                                                                             #
 # Version  : 0.1.0                                                                                                         #
@@ -127,9 +146,9 @@ categorical_descriptive_stats = [
 criteo_dtypes = {
     "sale": "category",
     "sales_amount": np.float64,
-    "conversion_time_delay": np.int64,
-    "click_ts": np.int64,
-    "n_clicks_1week": np.int64,
+    "conversion_time_delay": "Int64",
+    "click_ts": "Int64",
+    "n_clicks_1week": "Int64",
     "product_price": np.float64,
     "product_age_group": "category",
     "device_type": "category",

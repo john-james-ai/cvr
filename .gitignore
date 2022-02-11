@@ -8,6 +8,7 @@ __pycache__/
 
 # Data, Notes, and labs
 /data/
+*.csv
 */scratch/
 tests/**/*.csv
 /notes/
